@@ -153,6 +153,7 @@
                 const width = this.scale.width;
                 const height = this.scale.height;
 
+                // Фон меню
                 this.add.rectangle(0, 0, width, height, 0x0f111a).setOrigin(0);
 
                 this.add.text(width / 2, height / 3 - 50, 'КЛАДБИЩЕ ЛЮБВИ', {
@@ -169,18 +170,19 @@
                     align: 'center'
                 }).setOrigin(0.5);
 
-                const loginButton = this.add.rectangle(width / 2, height / 2 + 50, 260, 50, 0x2e3248)
-                    .setInteractive()
-                    .on('pointerover', () => loginButton.setFillStyle(0x3e4463))
-                    .on('pointerout', () => loginButton.setFillStyle(0x2e3248))
-                    .on('pointerdown', () => {
-                        this.scene.start('GameScene');
-                    });
-
-                this.add.text(width / 2, height / 2 + 50, 'ВОЙТИ НА КЛАДБИЩЕ', {
+                // Надежная кнопка с интерактивной зоной и сменой цвета при наведении
+                const btnBg = this.add.rectangle(width / 2, height / 2 + 50, 280, 60, 0x2e3248);
+                const btnText = this.add.text(width / 2, height / 2 + 50, 'ВОЙТИ НА КЛАДБИЩЕ', {
                     fontSize: '20px',
                     fill: '#ffffff'
                 }).setOrigin(0.5);
+
+                btnBg.setInteractive({ useHandCursor: true })
+                    .on('pointerover', () => btnBg.setFillStyle(0x3e4463))
+                    .on('pointerout', () => btnBg.setFillStyle(0x2e3248))
+                    .on('pointerdown', () => {
+                        this.scene.start('GameScene');
+                    });
             }
         }
 
@@ -195,22 +197,21 @@
                 this.generatePseudo3DTextures();
             }
 
-            // Программируем детализированные псевдо-3D спрайты с тенью и объемом
             generatePseudo3DTextures() {
                 const graphics = this.make.graphics({ x: 0, y: 0, add: false });
 
-                // 1. Деревянный крест (с фаской и текстурой)
+                // 1. Деревянный крест
                 graphics.clear();
-                graphics.fillStyle(0x000000, 0.4); // Тень на земле
+                graphics.fillStyle(0x000000, 0.4);
                 graphics.fillEllipse(20, 54, 24, 10);
-                graphics.fillStyle(0x654321, 1); // Тень дерева
+                graphics.fillStyle(0x654321, 1);
                 graphics.fillRect(15, 8, 10, 48);
-                graphics.fillStyle(0x8B4513, 1); // Тело креста
+                graphics.fillStyle(0x8B4513, 1);
                 graphics.fillRect(14, 6, 10, 48);
                 graphics.fillRect(6, 16, 26, 10);
                 this.generateTexture('tomb_0', 40, 60);
 
-                // 2. Каменная плита (с объемом)
+                // 2. Каменная плита
                 graphics.clear();
                 graphics.fillStyle(0x000000, 0.4);
                 graphics.fillEllipse(20, 54, 28, 10);
@@ -266,15 +267,15 @@
                 graphics.fillCircle(20, 14, 8);
                 this.generateTexture('tomb_4', 40, 60);
 
-                // Псевдо-3D спрайт игрока (с тенью, телом и головой)
+                // Псевдо-3D спрайт игрока
                 graphics.clear();
                 graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(16, 52, 20, 8); // Тень
-                graphics.fillStyle(0x2c3e50, 1); // Штаны
+                graphics.fillEllipse(16, 52, 20, 8);
+                graphics.fillStyle(0x2c3e50, 1);
                 graphics.fillRect(10, 32, 12, 18);
-                graphics.fillStyle(0x3498db, 1); // Торсио / куртка
+                graphics.fillStyle(0x3498db, 1);
                 graphics.fillRect(8, 16, 16, 18);
-                graphics.fillStyle(0xf1c40f, 1); // Голова (блондин)
+                graphics.fillStyle(0xf1c40f, 1);
                 graphics.fillCircle(16, 10, 8);
                 this.generateTexture('player_sprite', 32, 56);
             }
@@ -283,19 +284,15 @@
                 const mapWidth = 3000;
                 const mapHeight = 3000;
                 
-                // Трава с текстурным фоном
                 this.add.rectangle(0, 0, mapWidth, mapHeight, 0x1b241f).setOrigin(0);
-                // Центральная дорожка
                 this.add.rectangle(1500, 0, 240, mapHeight, 0x2c2d30).setOrigin(0.5, 0);
 
                 this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
 
-                // Создаем игрока с псевдо-3D спрайтом (origin по низу спрайта для правильной сортировки по Y)
                 this.player = this.add.sprite(1500, 1500, 'player_sprite');
                 this.player.setOrigin(0.5, 0.85);
                 this.physics.add.existing(this.player);
                 this.player.body.setCollideWorldBounds(true);
-                // Уменьшаем коллайдер под размер ног персонажа
                 this.player.body.setSize(20, 16);
                 this.player.body.setOffset(6, 36);
 
@@ -310,7 +307,6 @@
                     right: Phaser.Input.Keyboard.KeyCodes.D
                 });
 
-                // Клик для создания захоронения
                 this.input.on('pointerdown', (pointer) => {
                     if (document.getElementById('grave-form-overlay').style.display === 'flex') return;
 
@@ -373,7 +369,6 @@
             }
 
             triggerFuneralSequence(x, y, type, initials, epitaph) {
-                // Катафалк в псевдо-3D стиле
                 const hearse = this.add.rectangle(x - 400, y, 100, 50, 0x111111);
                 hearse.setOrigin(0.5, 0.8);
                 
@@ -383,11 +378,9 @@
                     duration: 2000,
                     ease: 'Power2',
                     onComplete: () => {
-                        // Устанавливаем памятник (origin 0.5, 1.0 чтобы опора стояла ровно в точке клика)
                         const tomb = this.add.sprite(x, y, `tomb_${type}`);
                         tomb.setOrigin(0.5, 1.0);
                         
-                        // Текст инициалов на памятнике
                         const text = this.add.text(x, y - 35, initials, {
                             fontSize: '11px',
                             fill: '#fff',
@@ -396,7 +389,6 @@
                             padding: { x: 2, y: 1 }
                         }).setOrigin(0.5, 1.0);
 
-                        // Устанавливаем правильную глубину (depth) на основе координаты Y для псевдо-3D сортировки
                         tomb.setDepth(y);
                         text.setDepth(y + 1);
 
@@ -456,8 +448,6 @@
                     body.setVelocityY(speed);
                 }
 
-                // Динамическая сортировка глубины персонажа в зависимости от его вертикального положения (Y)
-                // Это ключевая фишка псевдо-3D: персонаж корректно проходит позади памятников и перед ними
                 this.player.setDepth(this.player.y);
             }
         }
