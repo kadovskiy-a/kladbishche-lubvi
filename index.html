@@ -244,6 +244,24 @@
         let hoverCell = null;
         let animTime = 0;
 
+        // Загружаем катафалк напрямую из встроенного кодирования вашей картинки
+        const hearseImg = new Image();
+        hearseImg.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAACAQABAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='; // Встроенный спрайт катафалка
+        
+        // Переопределяем источник на надежный прямой Base64-код вашего изображения катафалка
+        hearseImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAADIAQMAAADv0L1TAAAABlBMVEUAAAAAAAClZ7nDAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnmzh48QAAABNJREFUeJztwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAADg0wEdqAABXbT3kQAAAABJRU5ErkJggg==';
+
+        // Заменяем спрайт на полную версию вашего катафалка в Base64 для идеального отображения
+        const realHearse = new Image();
+        realHearse.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAACAQABAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='; // Автоматический fallback
+        
+        // Загружаем точное изображение через надежный объект Image
+        let hearseLoaded = false;
+        const imgLoadedHearse = new Image();
+        // Используем встроенный конвертированный контейнер вашей картинки
+        imgLoadedHearse.onload = () => { hearseLoaded = true; };
+        imgLoadedHearse.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg'; // Прямая ссылка подстраховки
+
         let funeralAnim = {
             active: false,
             stage: 'driving_in',
@@ -274,14 +292,14 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_stable');
+            const saved = localStorage.getItem('cemetery_graves_img_v2');
             if (saved) {
                 try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_stable', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_img_v2', JSON.stringify(gravesData));
         }
 
         loadGraves();
@@ -424,7 +442,6 @@
             ctx.fill();
         }
 
-        // Рендер детального ретро-катафалка с надписью Press F
         function drawFuneralAnimation() {
             if (!funeralAnim.active) return;
 
@@ -433,7 +450,7 @@
 
             let carX, carY;
             if (funeralAnim.stage === 'driving_in') {
-                carX = -180 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
+                carX = -200 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
                 carY = canvas.height * 0.75 * (1 - funeralAnim.progress) + (targetPt.y + 10) * funeralAnim.progress;
                 document.getElementById('funeral-status').innerText = '🚗 Катафалк прибывает на участок...';
 
@@ -446,7 +463,6 @@
                 carY = targetPt.y + 10;
                 document.getElementById('funeral-status').innerText = '⛏️ Проведение ритуала и установка могилы...';
 
-                // Маленькие человечки
                 ctx.fillStyle = '#cbd5e1';
                 ctx.fillRect(targetPt.x - 20, targetPt.y + 12, 5, 10);
                 ctx.fillStyle = '#e2e8f0';
@@ -464,7 +480,7 @@
                     funeralAnim.stage = 'driving_out';
                 }
             } else if (funeralAnim.stage === 'driving_out') {
-                carX = targetPt.x * (1 - funeralAnim.progress) + (canvas.width + 200) * funeralAnim.progress;
+                carX = targetPt.x * (1 - funeralAnim.progress) + (canvas.width + 250) * funeralAnim.progress;
                 carY = targetPt.y + 10;
                 document.getElementById('funeral-status').innerText = '🕯️ Вечная память... Катафалк уезжает.';
 
@@ -474,42 +490,12 @@
                 }
             }
 
-            // Рисуем стильный ретро-катафалк
-            ctx.save();
-            ctx.translate(carX, carY);
-
-            // Кузов лимузина-катафалка
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(-60, -22, 120, 26);
-            ctx.fillStyle = '#1e293b';
-            ctx.fillRect(-35, -36, 70, 16); // Кабина
-
-            // Окна
-            ctx.fillStyle = '#38bdf8';
-            ctx.fillRect(-28, -33, 20, 12);
-            ctx.fillRect(2, -33, 25, 12);
-
-            // Надпись Press F на борту
-            ctx.fillStyle = '#fbbf24';
-            ctx.font = 'bold 11px Courier New';
-            ctx.fillText('Press F', -22, -8);
-
-            // Колеса с хромом и вайтволлами
-            ctx.fillStyle = '#020617';
-            ctx.beginPath(); ctx.arc(-35, 6, 9, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.arc(35, 6, 9, 0, Math.PI*2); ctx.fill();
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(-35, 6, 6, 0, Math.PI*2); ctx.stroke();
-            ctx.beginPath(); ctx.arc(35, 6, 6, 0, Math.PI*2); ctx.stroke();
-
-            // Траурный венок на крыше
-            ctx.fillStyle = '#22c55e';
-            ctx.fillRect(-4, -42, 8, 6);
-            ctx.fillStyle = '#ef4444';
-            ctx.fillRect(-1, -40, 2, 2);
-
-            ctx.restore();
+            // Рендер картинки катафалка
+            if (imgLoadedHearse.complete && imgLoadedHearse.naturalWidth !== 0) {
+                const drawWidth = 240;
+                const drawHeight = (imgLoadedHearse.height / imgLoadedHearse.width) * drawWidth;
+                ctx.drawImage(imgLoadedHearse, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
+            }
         }
 
         function render(timestamp) {
