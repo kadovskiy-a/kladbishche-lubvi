@@ -246,7 +246,7 @@
 
         // Загружаем картинку катафалка из вашего сообщения
         const hearseImg = new Image();
-        hearseImg.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg'; // Прямая ссылка на предоставленное изображение катафалка с Press F[cite: 2]
+        hearseImg.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg'; // Прямая ссылка на предоставленное изображение катафалка с Press F
 
         let funeralAnim = {
             active: false,
@@ -358,4 +358,309 @@
             if (grave.decor && grave.decor.fence) {
                 ctx.strokeStyle = '#64748b';
                 ctx.lineWidth = 1.5;
-                ctx.beginPath
+                ctx.beginPath();
+                ctx.moveTo(cx - 24, cy - 2);
+                ctx.lineTo(cx, cy - 14);
+                ctx.lineTo(cx + 24, cy - 2);
+                ctx.lineTo(cx, cy + 10);
+                ctx.closePath();
+                ctx.stroke();
+            }
+
+            if (grave.decor && grave.decor.flowers) {
+                ctx.fillStyle = '#ec4899';
+                ctx.fillRect(cx - 10, cy - 6, 3, 3);
+                ctx.fillStyle = '#8b5cf6';
+                ctx.fillRect(cx + 8, cy - 4, 3, 3);
+            }
+
+            if (grave.type === 'cross') {
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(cx - 3, cy - 26, 6, 22);
+                ctx.fillRect(cx - 10, cy - 20, 20, 5);
+                ctx.fillStyle = '#94a3b8';
+                ctx.fillRect(cx - 3, cy - 26, 2, 22);
+                ctx.fillRect(cx - 10, cy - 20, 20, 2);
+            } else if (grave.type === 'slab') {
+                ctx.fillStyle = '#334155';
+                ctx.fillRect(cx - 10, cy - 24, 20, 22);
+                ctx.fillStyle = '#475569';
+                ctx.fillRect(cx - 10, cy - 24, 20, 3);
+                ctx.fillStyle = '#ff0055';
+                ctx.beginPath();
+                ctx.arc(cx, cy - 12, 3, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (grave.type === 'urn') {
+                ctx.fillStyle = '#78350f';
+                ctx.beginPath();
+                ctx.moveTo(cx - 8, cy - 10);
+                ctx.lineTo(cx + 8, cy - 10);
+                ctx.lineTo(cx + 6, cy - 2);
+                ctx.lineTo(cx - 6, cy - 2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.fillStyle = '#ff0055';
+                ctx.fillRect(cx - 4, cy - 16, 4, 4);
+                ctx.fillRect(cx + 1, cy - 15, 4, 4);
+            }
+        }
+
+        function drawIsoTree(c, r) {
+            const pt = toScreen(c, r);
+            const cx = pt.x;
+            const cy = pt.y + TILE_H / 2;
+
+            ctx.fillStyle = 'rgba(4, 6, 8, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + 4, 18, 9, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#3e2723';
+            ctx.fillRect(cx - 3, cy - 22, 6, 20);
+
+            ctx.fillStyle = '#14331b';
+            ctx.beginPath();
+            ctx.arc(cx, cy - 32, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#1e4626';
+            ctx.beginPath();
+            ctx.arc(cx - 4, cy - 36, 12, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Рендер картинки катафалка
+        function drawFuneralAnimation() {
+            if (!funeralAnim.active) return;
+
+            funeralAnim.progress += 0.012;
+            const targetPt = toScreen(funeralAnim.targetCell.c, funeralAnim.targetCell.r);
+
+            let carX, carY;
+            if (funeralAnim.stage === 'driving_in') {
+                carX = -150 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
+                carY = canvas.height * 0.75 * (1 - funeralAnim.progress) + (targetPt.y + 10) * funeralAnim.progress;
+                document.getElementById('funeral-status').innerText = '🚗 Катафалк прибывает на участок...';
+
+                if (funeralAnim.progress >= 1) {
+                    funeralAnim.progress = 0;
+                    funeralAnim.stage = 'digging';
+                }
+            } else if (funeralAnim.stage === 'digging') {
+                carX = targetPt.x;
+                carY = targetPt.y + 10;
+                document.getElementById('funeral-status').innerText = '⛏️ Проведение ритуала и установка могилы...';
+
+                // Человечки
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(targetPt.x - 18, targetPt.y + 14, 5, 10);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath(); ctx.arc(targetPt.x - 15, targetPt.y + 11, 2.5, 0, Math.PI*2); ctx.fill();
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(targetPt.x + 14, targetPt.y + 14, 5, 10);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath(); ctx.arc(targetPt.x + 16, targetPt.y + 11, 2.5, 0, Math.PI*2); ctx.fill();
+
+                if (funeralAnim.progress >= 1.2) {
+                    gravesData[`${funeralAnim.targetCell.c}_${funeralAnim.targetCell.r}`] = funeralAnim.pendingData;
+                    saveGraves();
+                    funeralAnim.progress = 0;
+                    funeralAnim.stage = 'driving_out';
+                }
+            } else if (funeralAnim.stage === 'driving_out') {
+                carX = targetPt.x * (1 - funeralAnim.progress) + (canvas.width + 200) * funeralAnim.progress;
+                carY = (targetPt.y + 10);
+                document.getElementById('funeral-status').innerText = '🕯️ Вечная память... Катафалк уезжает.';
+
+                if (funeralAnim.progress >= 1) {
+                    funeralAnim.active = false;
+                    document.getElementById('funeral-status').style.display = 'none';
+                }
+            }
+
+            // Отрисовка исходной картинки машины
+            if (hearseImg.complete && hearseImg.naturalWidth !== 0) {
+                const drawWidth = 220;
+                const drawHeight = (hearseImg.height / hearseImg.width) * drawWidth;
+                ctx.drawImage(hearseImg, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
+            }
+        }
+
+        function render(timestamp) {
+            animTime = timestamp / 1000;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const mid = Math.floor(MAP_COLS / 2);
+
+            for (let r = 0; r < MAP_ROWS; r++) {
+                for (let c = 0; c < MAP_COLS; c++) {
+                    if (c === 0 || c === MAP_COLS - 1 || r === 0 || r === MAP_ROWS - 1) {
+                        drawIsoTile(c, r, 'border');
+                    } else if (c === mid || r === mid) {
+                        drawIsoTile(c, r, 'path');
+                    } else {
+                        drawIsoTile(c, r, 'grass');
+                    }
+                }
+            }
+
+            const trees = [
+                [2, 2], [MAP_COLS - 3, 2],
+                [2, MAP_ROWS - 3], [MAP_COLS - 3, MAP_ROWS - 3],
+                [2, mid], [MAP_COLS - 3, mid]
+            ];
+            trees.forEach(([tc, tr]) => drawIsoTree(tc, tr));
+
+            const sortedGraves = Object.keys(gravesData).sort((a, b) => {
+                const [ac, ar] = a.split('_').map(Number);
+                const [bc, br] = b.split('_').map(Number);
+                return (ac + ar) - (bc + br);
+            });
+
+            sortedGraves.forEach(key => {
+                const [c, r] = key.split('_').map(Number);
+                if (c < MAP_COLS && r < MAP_ROWS) {
+                    drawIsoGrave(c, r, gravesData[key]);
+                }
+            });
+
+            drawFuneralAnimation();
+
+            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r) && !funeralAnim.active) {
+                const pt = toScreen(hoverCell.c, hoverCell.r);
+                ctx.beginPath();
+                ctx.moveTo(pt.x, pt.y);
+                ctx.lineTo(pt.x + TILE_W / 2, pt.y + TILE_H / 2);
+                ctx.lineTo(pt.x, pt.y + TILE_H);
+                ctx.lineTo(pt.x - TILE_W / 2, pt.y + TILE_H / 2);
+                ctx.closePath();
+
+                const pulse = Math.sin(animTime * 6) * 0.25 + 0.55;
+                ctx.strokeStyle = `rgba(0, 240, 255, ${pulse})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                const key = `${hoverCell.c}_${hoverCell.r}`;
+                if (gravesData[key] && gravesData[key].text) {
+                    const hx = pt.x;
+                    const hy = pt.y - 20;
+                    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+                    ctx.fillRect(hx - 70, hy - 20, 140, 24);
+                    ctx.strokeStyle = '#ff0055';
+                    ctx.strokeRect(hx - 70, hy - 20, 140, 24);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '11px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(gravesData[key].text.substring(0, 22) + '...', hx, hy - 4);
+                    ctx.textAlign = 'left';
+                }
+            }
+
+            fogParticles.forEach(fog => {
+                fog.x += fog.vx;
+                if (fog.x > canvas.width + 100) fog.x = -100;
+                if (fog.x < -100) fog.x = canvas.width + 100;
+
+                const grad = ctx.createRadialGradient(fog.x, fog.y, 5, fog.x, fog.y, fog.radius);
+                grad.addColorStop(0, 'rgba(0, 240, 255, 0.03)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(fog.x, fog.y, fog.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            requestAnimationFrame(render);
+        }
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (funeralAnim.active) return;
+            hoverCell = getCellFromMouse(e.clientX, e.clientY);
+            canvas.style.cursor = (hoverCell && isBlocked(hoverCell.c, hoverCell.r)) ? 'default' : 'pointer';
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            hoverCell = null;
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (funeralAnim.active) return;
+            const cell = getCellFromMouse(e.clientX, e.clientY);
+            if (!cell || isBlocked(cell.c, cell.r)) return;
+
+            selectedCell = { col: cell.c, row: cell.r };
+            const key = `${cell.c}_${cell.r}`;
+
+            if (gravesData[key]) {
+                tempType = gravesData[key].type;
+                tempDecor = gravesData[key].decor ? { ...gravesData[key].decor } : { fence: false, flowers: false };
+                document.getElementById('epitaphInput').value = gravesData[key].text || '';
+                document.getElementById('delete-btn').style.display = 'block';
+            } else {
+                tempType = 'cross';
+                tempDecor = { fence: false, flowers: false };
+                document.getElementById('epitaphInput').value = '';
+                document.getElementById('delete-btn').style.display = 'none';
+            }
+
+            updateDecorButtons();
+            document.getElementById('modal').style.display = 'block';
+        });
+
+        function selectType(type) { tempType = type; }
+        function toggleDecor(name) {
+            tempDecor[name] = !tempDecor[name];
+            updateDecorButtons();
+        }
+        function updateDecorButtons() {
+            document.getElementById('decorFenceBtn').innerText = `🔲 Кованая оградка: ${tempDecor.fence ? 'ВКЛ' : 'ВЫКЛ'}`;
+            document.getElementById('decorFlowersBtn').innerText = `💐 Живые цветы: ${tempDecor.flowers ? 'ВКЛ' : 'ВЫКЛ'}`;
+        }
+        function generatePhrase() {
+            document.getElementById('epitaphInput').value = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
+        }
+        function openPaymentModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('payModal').style.display = 'block';
+        }
+        function closePaymentModal() {
+            document.getElementById('payModal').style.display = 'none';
+            document.getElementById('modal').style.display = 'block';
+        }
+        function completePayment(method) {
+            if (!selectedCell) return;
+            const text = document.getElementById('epitaphInput').value || 'Вечная память';
+
+            funeralAnim.active = true;
+            funeralAnim.stage = 'driving_in';
+            funeralAnim.progress = 0;
+            funeralAnim.targetCell = { c: selectedCell.col, r: selectedCell.row };
+            funeralAnim.pendingData = {
+                type: tempType,
+                text: text,
+                decor: { ...tempDecor },
+                payment: method
+            };
+
+            document.getElementById('payModal').style.display = 'none';
+            document.getElementById('funeral-status').style.display = 'block';
+            selectedCell = null;
+        }
+
+        function deleteTombstone() {
+            if (!selectedCell) return;
+            delete gravesData[`${selectedCell.col}_${selectedCell.row}`];
+            saveGraves();
+            closeModal();
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            document.getElementById('payModal').style.display = 'none';
+            selectedCell = null;
+        }
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
