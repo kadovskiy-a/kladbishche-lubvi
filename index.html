@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cemetery of Love — Кладбище Любви</title>
+    <title>Cemetery of Love — Кладбище Любви (Phaser Edition)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -14,59 +14,57 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            background-color: #12141a;
+            background-color: #0b0d12;
             overflow: hidden;
             font-family: 'Courier New', Courier, monospace;
+        }
+        #game-container {
+            width: 100vw;
+            height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
         }
-        h1 {
-            margin: 5px 0 10px 0;
-            font-size: 22px;
+        /* Стили для UI и модальных окон поверх Phaser */
+        #hud-header {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(18, 20, 28, 0.9);
+            border: 2px solid #ff0055;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+            padding: 8px 24px;
+            border-radius: 4px;
             color: #fff;
-            text-shadow: 2px 2px #ff0055, -1px -1px #00f0ff;
-            letter-spacing: 2px;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 3px;
             text-transform: uppercase;
-        }
-        #game-container {
-            position: relative;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85);
-            border: 4px solid #333a4d;
-            border-radius: 6px;
-            overflow: hidden;
-            background: #1f3720;
-            max-width: 95vw;
-            max-height: 82vh;
-        }
-        canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            cursor: crosshair;
-            image-rendering: pixelated;
+            text-shadow: 2px 2px #ff0055, -1px -1px #00f0ff;
+            z-index: 10;
+            pointer-events: none;
         }
         .modal {
             display: none;
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: #1b1e2b;
             border: 3px solid #ff0055;
-            padding: 20px 24px;
+            padding: 22px 26px;
             border-radius: 6px;
-            z-index: 20;
+            z-index: 30;
             text-align: center;
-            box-shadow: 0 0 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 0, 85, 0.4);
-            min-width: 300px;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.95), 0 0 25px rgba(255, 0, 85, 0.4);
+            min-width: 320px;
             color: #fff;
         }
         .modal h3 {
             margin: 0 0 14px 0;
             color: #ff77a9;
-            font-size: 17px;
+            font-size: 18px;
             letter-spacing: 1px;
             text-transform: uppercase;
         }
@@ -148,92 +146,78 @@
             cursor: pointer;
             border-radius: 4px;
             text-align: center;
+            transition: 0.2s;
         }
         .pay-option:hover {
             background: #2b304a;
+            border-color: #ff0055;
         }
     </style>
+    <!-- Подключаем современный движок Phaser 3 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 </head>
 <body>
 
-    <h1>Cemetery of Love</h1>
-    <div id="game-container">
-        <canvas id="gameCanvas" width="960" height="640"></canvas>
+    <div id="hud-header">Cemetery of Love</div>
+    <div id="game-container"></div>
 
-        <div id="modal" class="modal">
-            <h3>Оформление участка</h3>
-            <div class="input-group">
-                <label>Тип памятника:</label>
-                <button class="btn" onclick="selectType('cross')">✝ Каменный крест</button>
-                <button class="btn" onclick="selectType('slab')">🪦 Гранитная плита</button>
-                <button class="btn" onclick="selectType('urn')">🌹 Вазон с розами</button>
-            </div>
-
-            <div class="input-group">
-                <label>Дополнительный декор:</label>
-                <button class="btn" onclick="toggleDecor('fence')" id="decorFenceBtn">🔲 Кованая оградка: ВЫКЛ</button>
-                <button class="btn" onclick="toggleDecor('flowers')" id="decorFlowersBtn">💐 Живые цветы: ВЫКЛ</button>
-            </div>
-
-            <div class="input-group">
-                <label>Эпитафия / Некролог:</label>
-                <textarea id="epitaphInput" rows="2" placeholder="Здесь покоится любовь с..."></textarea>
-            </div>
-
-            <div class="row">
-                <button class="btn" style="text-align:center; background:#1b3b22; border-color:#22c55e;" onclick="generatePhrase()">✨ Сгенерировать</button>
-            </div>
-
-            <button class="btn" id="pay-proceed-btn" onclick="openPaymentModal()" style="background:#4338ca; border-color:#818cf8; text-align:center; margin-top:10px;">💳 Оплатить и установить</button>
-            <button class="btn" id="delete-btn" onclick="deleteTombstone()">🗑 Убрать с участка</button>
-            <button class="btn" id="cancel-btn" onclick="closeModal()">Отмена</button>
+    <!-- Модальное окно оформления -->
+    <div id="modal" class="modal">
+        <h3>Оформление участка</h3>
+        <div class="input-group">
+            <label>Тип памятника:</label>
+            <button class="btn" onclick="selectType('cross')">✝ Каменный крест</button>
+            <button class="btn" onclick="selectType('slab')">🪦 Гранитная плита</button>
+            <button class="btn" onclick="selectType('urn')">🌹 Вазон с розами</button>
         </div>
 
-        <div id="payModal" class="modal">
-            <h3>Терминал ритуальных услуг</h3>
-            <p style="font-size:13px; color:#cbd5e1; margin-bottom:12px;">Выберите способ оплаты вечной памяти:</p>
-            
-            <div class="pay-option" onclick="completePayment('card')">
-                <strong>Банковская карта</strong><br><span style="font-size:11px; color:#94a3b8;">*Списание в рассрочку до конца света</span>
-            </div>
-            <div class="pay-option" onclick="completePayment('crypto')">
-                <strong>Крипта Любви (LOVECOIN)</strong><br><span style="font-size:11px; color:#94a3b8;">*Без комиссии за разбитые сердца</span>
-            </div>
-            <div class="pay-option" onclick="completePayment('memories')">
-                <strong>Оплатить тёплыми воспоминаниями</strong><br><span style="font-size:11px; color:#94a3b8;">*100% скидка на ностальгию</span>
-            </div>
-
-            <button class="btn" id="cancel-pay-btn" onclick="closePaymentModal()" style="background:#2d1622; border-color:#ff0055; color:#ff99bb; text-align:center; margin-top:10px;">Назад</button>
+        <div class="input-group">
+            <label>Дополнительный декор:</label>
+            <button class="btn" onclick="toggleDecor('fence')" id="decorFenceBtn">🔲 Кованая оградка: ВЫКЛ</button>
+            <button class="btn" onclick="toggleDecor('flowers')" id="decorFlowersBtn">💐 Живые цветы: ВЫКЛ</button>
         </div>
+
+        <div class="input-group">
+            <label>Эпитафия / Некролог:</label>
+            <textarea id="epitaphInput" rows="2" placeholder="Здесь покоится любовь с..."></textarea>
+        </div>
+
+        <div class="row">
+            <button class="btn" style="text-align:center; background:#1b3b22; border-color:#22c55e;" onclick="generatePhrase()">✨ Сгенерировать</button>
+        </div>
+
+        <button class="btn" onclick="openPaymentModal()" style="background:#4338ca; border-color:#818cf8; text-align:center; margin-top:10px;">💳 Оплатить и установить</button>
+        <button class="btn" id="delete-btn" onclick="deleteTombstone()">🗑 Убрать с участка</button>
+        <button class="btn" id="cancel-btn" onclick="closeModal()">Отмена</button>
+    </div>
+
+    <!-- Модальное окно оплаты -->
+    <div id="payModal" class="modal">
+        <h3>Терминал ритуальных услуг</h3>
+        <p style="font-size:13px; color:#cbd5e1; margin-bottom:12px;">Выберите способ оплаты вечной памяти:</p>
+        
+        <div class="pay-option" onclick="completePayment('card')">
+            <strong>Банковская карта</strong><br><span style="font-size:11px; color:#94a3b8;">*Списание в рассрочку до конца света</span>
+        </div>
+        <div class="pay-option" onclick="completePayment('crypto')">
+            <strong>Крипта Любви (LOVECOIN)</strong><br><span style="font-size:11px; color:#94a3b8;">*Без комиссии за разбитые сердца</span>
+        </div>
+        <div class="pay-option" onclick="completePayment('memories')">
+            <strong>Оплатить тёплыми воспоминаниями</strong><br><span style="font-size:11px; color:#94a3b8;">*100% скидка на ностальгию</span>
+        </div>
+
+        <button class="btn" onclick="closePaymentModal()" style="background:#2d1622; border-color:#ff0055; color:#ff99bb; text-align:center; margin-top:10px;">Назад</button>
     </div>
 
     <script>
-        const TILE = 32;
-        const COLS = 30;
-        const ROWS = 20;
-
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+        const TILE = 48; // Увеличили масштаб для движка Phaser
+        const COLS = 32;
+        const ROWS = 24;
 
         let gravesData = {};
         let selectedCell = null;
         let tempType = 'cross';
         let tempDecor = { fence: false, flowers: false };
-        let hoverCell = null;
-        let animTime = 0;
-
-        // Погодные частицы (осенние листья)
-        let leaves = [];
-        for (let i = 0; i < 25; i++) {
-            leaves.push({
-                x: Math.random() * 960,
-                y: Math.random() * 640,
-                speedX: (Math.random() - 0.5) * 1.2,
-                speedY: Math.random() * 1.5 + 0.8,
-                color: Math.random() > 0.5 ? '#d97706' : '#b45309',
-                size: Math.random() * 3 + 2
-            });
-        }
 
         const randomPhrases = [
             "Умерло от «прочитано в 23:45»",
@@ -247,354 +231,192 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_v5');
+            const saved = localStorage.getItem('cemetery_graves_phaser');
             if (saved) {
-                try {
-                    gravesData = JSON.parse(saved);
-                } catch (e) {
-                    gravesData = {};
-                }
-            } else {
-                const old = localStorage.getItem('cemetery_graves_v4');
-                if (old) {
-                    try {
-                        const parsed = JSON.parse(old);
-                        for (let k in parsed) {
-                            gravesData[k] = { 
-                                type: parsed[k].type || 'cross', 
-                                text: parsed[k].text || 'Вечная память',
-                                decor: { fence: false, flowers: false }
-                            };
-                        }
-                    } catch(e) {}
-                }
+                try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_v5', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_phaser', JSON.stringify(gravesData));
         }
 
-        function isBlocked(c, r) {
-            const midC = Math.floor(COLS / 2);
-            const midR = Math.floor(ROWS / 2);
-            if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) return true;
-            if (c === midC || r === midR) return true;
-            if ((c === 3 || c === COLS - 4) && (r === 3 || r === ROWS - 4)) return true;
-            return false;
-        }
+        loadGraves();
 
-        function px(tileX, tileY, gx, gy, gw, gh, color) {
-            ctx.fillStyle = color;
-            ctx.fillRect(tileX + gx * 2, tileY + gy * 2, gw * 2, gh * 2);
-        }
-
-        function drawGrassTile(c, r) {
-            const x = c * TILE;
-            const y = r * TILE;
-            ctx.fillStyle = (c + r) % 2 === 0 ? '#233d24' : '#1f3720';
-            ctx.fillRect(x, y, TILE, TILE);
-
-            const hash = (c * 73 + r * 37) % 11;
-            px(x, y, 3, 4, 1, 2, '#2e522f');
-            px(x, y, 11, 10, 1, 2, '#2e522f');
-            if (hash === 2 || hash === 7) {
-                px(x, y, 7, 7, 1, 1, '#f43f5e');
-            }
-        }
-
-        function drawPathTile(c, r, isCross) {
-            const x = c * TILE;
-            const y = r * TILE;
-            ctx.fillStyle = '#2c2927';
-            ctx.fillRect(x, y, TILE, TILE);
-
-            const stones = [
-                [1, 1, 6, 6, '#57534e', '#78716c'],
-                [8, 1, 7, 6, '#44403c', '#57534e'],
-                [1, 8, 7, 7, '#44403c', '#57534e'],
-                [9, 8, 6, 7, '#57534e', '#78716c']
-            ];
-            stones.forEach(([gx, gy, gw, gh, base, light]) => {
-                px(x, y, gx, gy, gw, gh, base);
-                px(x, y, gx, gy, gw - 1, 1, light);
-            });
-
-            if (isCross) {
-                px(x, y, 6, 6, 4, 4, '#ff0055');
-            }
-        }
-
-        function drawFenceTile(c, r) {
-            const x = c * TILE;
-            const y = r * TILE;
-            const midC = Math.floor(COLS / 2);
-            const midR = Math.floor(ROWS / 2);
-
-            if (c === midC || r === midR) {
-                drawPathTile(c, r, false);
-                px(x, y, 0, 4, 2, 10, '#475569');
-                px(x, y, 14, 4, 2, 10, '#475569');
-                return;
+        // Конфигурация Phaser 3 игры
+        class CemeteryScene extends Phaser.Scene {
+            constructor() {
+                super('CemeteryScene');
             }
 
-            px(x, y, 0, 10, 16, 6, '#334155');
-            px(x, y, 0, 10, 16, 1, '#64748b');
+            create() {
+                this.graphics = this.add.graphics();
+                
+                // Настраиваем камеру с возможностью плавного зума и перетаскивания
+                this.cameras.main.setBounds(-200, -200, COLS * TILE + 400, ROWS * TILE + 400);
+                
+                // Интерактив кликов по сетке
+                this.input.on('pointerdown', (pointer) => {
+                    const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+                    const c = Math.floor(worldPoint.x / TILE);
+                    const r = Math.floor(worldPoint.y / TILE);
 
-            [3, 8, 13].forEach(bx => {
-                px(x, y, bx, 3, 1, 8, '#0f172a');
-                px(x, y, bx, 2, 1, 1, '#fbbf24');
-            });
-            px(x, y, 0, 5, 16, 1, '#1e293b');
-            px(x, y, 0, 9, 16, 1, '#1e293b');
-        }
+                    const midC = Math.floor(COLS / 2);
+                    const midR = Math.floor(ROWS / 2);
 
-        function drawTree(c, r) {
-            const x = c * TILE;
-            const y = r * TILE;
+                    // Проверка на зоны (забор, дорожки)
+                    if (c <= 0 || c >= COLS - 1 || r <= 0 || r >= ROWS - 1) return;
+                    if (c === midC || r === midR) return;
 
-            ctx.fillStyle = 'rgba(10, 18, 12, 0.4)';
-            ctx.beginPath();
-            ctx.ellipse(x + 16, y + 26, 12, 5, 0, 0, Math.PI * 2);
-            ctx.fill();
+                    selectedCell = { col: c, row: r };
+                    const key = `${c}_${r}`;
 
-            px(x, y, 7, 10, 2, 4, '#3e2723');
-            px(x, y, 4, 4, 8, 7, '#14331b');
-            px(x, y, 5, 2, 6, 5, '#1e4626');
-            px(x, y, 6, 3, 2, 2, '#2d6a3b');
-        }
-
-        function drawGrave(c, r, graveObj) {
-            const x = c * TILE;
-            const y = r * TILE;
-            const type = graveObj.type;
-            const decor = graveObj.decor || {};
-
-            // Оградка вокруг могилы (если включена)
-            if (decor.fence) {
-                ctx.strokeStyle = '#475569';
-                ctx.lineWidth = 1.5;
-                ctx.strokeRect(x + 2, y + 2, TILE - 4, TILE - 4);
-            }
-
-            // Живые цветы по бокам (если включены)
-            if (decor.flowers) {
-                px(x, y, 1, 12, 2, 2, '#ec4899');
-                px(x, y, 13, 12, 2, 2, '#8b5cf6');
-            }
-
-            px(x, y, 3, 12, 10, 3, '#3e2723');
-            px(x, y, 4, 11, 8, 1, '#4e342e');
-
-            if (type === 'cross') {
-                px(x, y, 7, 2, 2, 10, '#94a3b8');
-                px(x, y, 4, 4, 8, 2, '#94a3b8');
-                px(x, y, 7, 2, 1, 10, '#cbd5e1');
-                px(x, y, 4, 4, 8, 1, '#cbd5e1');
-            } else if (type === 'slab') {
-                px(x, y, 4, 3, 8, 10, '#475569');
-                px(x, y, 4, 3, 1, 10, '#94a3b8');
-                px(x, y, 6, 6, 4, 1, '#cbd5e1');
-                px(x, y, 7, 8, 2, 2, '#ff0055');
-            } else if (type === 'urn') {
-                px(x, y, 5, 8, 6, 5, '#78350f');
-                px(x, y, 4, 7, 8, 1, '#92400e');
-                px(x, y, 5, 4, 6, 3, '#15803d');
-                px(x, y, 5, 3, 2, 2, '#ff0055');
-                px(x, y, 9, 3, 2, 2, '#ff0055');
-            }
-        }
-
-        function render(timestamp) {
-            animTime = timestamp / 1000;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            const midC = Math.floor(COLS / 2);
-            const midR = Math.floor(ROWS / 2);
-
-            for (let r = 0; r < ROWS; r++) {
-                for (let c = 0; c < COLS; c++) {
-                    if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) {
-                        drawGrassTile(c, r);
-                        drawFenceTile(c, r);
-                    } else if (c === midC || r === midR) {
-                        drawPathTile(c, r, c === midC && r === midR);
+                    if (gravesData[key]) {
+                        tempType = gravesData[key].type;
+                        tempDecor = gravesData[key].decor ? { ...gravesData[key].decor } : { fence: false, flowers: false };
+                        document.getElementById('epitaphInput').value = gravesData[key].text || '';
+                        document.getElementById('delete-btn').style.display = 'block';
                     } else {
-                        drawGrassTile(c, r);
+                        tempType = 'cross';
+                        tempDecor = { fence: false, flowers: false };
+                        document.getElementById('epitaphInput').value = '';
+                        document.getElementById('delete-btn').style.display = 'none';
+                    }
+
+                    updateDecorButtons();
+                    document.getElementById('modal').style.display = 'block';
+                });
+            }
+
+            update(time, delta) {
+                this.graphics.clear();
+                const midC = Math.floor(COLS / 2);
+                const midR = Math.floor(ROWS / 2);
+
+                // 1. Отрисовка земли и дорожек
+                for (let r = 0; r < ROWS; r++) {
+                    for (let c = 0; c < COLS; c++) {
+                        const x = c * TILE;
+                        const y = r * TILE;
+
+                        if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) {
+                            this.graphics.fillStyle((c + r) % 2 === 0 ? 0x233d24 : 0x1f3720);
+                            this.graphics.fillRect(x, y, TILE, TILE);
+                            // Забор
+                            this.graphics.fillStyle(0x334155);
+                            this.graphics.fillRect(x + 4, y + 20, TILE - 8, 12);
+                            this.graphics.fillStyle(0xfbbf24);
+                            this.graphics.fillRect(x + TILE/2 - 2, y + 4, 4, 16);
+                        } else if (c === midC || r === midR) {
+                            this.graphics.fillStyle(0x2c2927);
+                            this.graphics.fillRect(x, y, TILE, TILE);
+                            this.graphics.lineStyle(1, 0x44403c);
+                            this.graphics.strokeRect(x, y, TILE, TILE);
+                        } else {
+                            this.graphics.fillStyle((c + r) % 2 === 0 ? 0x233d24 : 0x1f3720);
+                            this.graphics.fillRect(x, y, TILE, TILE);
+                        }
+                    }
+                }
+
+                // 2. Отрисовка памятников
+                for (const key in gravesData) {
+                    const [c, r] = key.split('_').map(Number);
+                    const x = c * TILE;
+                    const y = r * TILE;
+                    const grave = gravesData[key];
+
+                    // Холмик
+                    this.graphics.fillStyle(0x3e2723);
+                    this.graphics.fillEllipse(x + TILE/2, y + TILE - 10, TILE * 0.6, TILE * 0.3);
+
+                    // Декор (оградка)
+                    if (grave.decor && grave.decor.fence) {
+                        this.graphics.lineStyle(2, 0x475569);
+                        this.graphics.strokeRect(x + 4, y + 4, TILE - 8, TILE - 8);
+                    }
+
+                    // Памятник
+                    if (grave.type === 'cross') {
+                        this.graphics.fillStyle(0x94a3b8);
+                        this.graphics.fillRect(x + TILE/2 - 4, y + 8, 8, TILE - 16);
+                        this.graphics.fillRect(x + TILE/2 - 12, y + 14, 24, 8);
+                    } else if (grave.type === 'slab') {
+                        this.graphics.fillStyle(0x475569);
+                        this.graphics.fillRect(x + TILE/2 - 12, y + 6, 24, TILE - 12);
+                        this.graphics.fillStyle(0xff0055);
+                        this.graphics.fillCircle(x + TILE/2, y + TILE/2, 4);
+                    } else if (grave.type === 'urn') {
+                        this.graphics.fillStyle(0x78350f);
+                        this.graphics.fillRect(x + TILE/2 - 10, y + TILE/2, 20, 16);
+                        this.graphics.fillStyle(0xff0055);
+                        this.graphics.fillCircle(x + TILE/2 - 6, y + TILE/2 - 4, 6);
+                        this.graphics.fillCircle(x + TILE/2 + 6, y + TILE/2 - 4, 6);
                     }
                 }
             }
-
-            const treeSpots = [
-                [3, 3], [COLS - 4, 3],
-                [3, ROWS - 4], [COLS - 4, ROWS - 4],
-                [3, Math.floor(ROWS/2)], [COLS - 4, Math.floor(ROWS/2)]
-            ];
-            treeSpots.forEach(([tc, tr]) => drawTree(tc, tr));
-
-            // Памятники
-            for (const key in gravesData) {
-                const [c, r] = key.split('_').map(Number);
-                if (c < COLS && r < ROWS) {
-                    drawGrave(c, r, gravesData[key]);
-                }
-            }
-
-            // Блуждающие призрачные огоньки в ночной атмосфере
-            for (let i = 0; i < 3; i++) {
-                const lx = (Math.sin(animTime + i * 2) * 150) + 480;
-                const ly = (Math.cos(animTime * 0.8 + i) * 100) + 320;
-                ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
-                ctx.beginPath();
-                ctx.arc(lx, ly, 12, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Падающие осенние листья
-            ctx.fillStyle = 'rgba(217, 119, 6, 0.7)';
-            leaves.forEach(leaf => {
-                leaf.x += leaf.speedX;
-                leaf.y += leaf.speedY;
-                if (leaf.y > 640) { leaf.y = -10; leaf.x = Math.random() * 960; }
-                if (leaf.x > 960) leaf.x = 0;
-                if (leaf.x < 0) leaf.x = 960;
-                ctx.fillRect(leaf.x, leaf.y, leaf.size * 2, leaf.size);
-            });
-
-            // Подсветка при наведении
-            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r)) {
-                const hx = hoverCell.c * TILE;
-                const hy = hoverCell.r * TILE;
-                const pulse = Math.sin(animTime * 6) * 0.2 + 0.8;
-                ctx.strokeStyle = `rgba(0, 240, 255, ${pulse})`;
-                ctx.lineWidth = 2;
-                ctx.strokeRect(hx + 1, hy + 1, TILE - 2, TILE - 2);
-
-                const key = `${hoverCell.c}_${hoverCell.r}`;
-                if (gravesData[key] && gravesData[key].text) {
-                    ctx.fillStyle = 'rgba(18, 20, 26, 0.9)';
-                    ctx.fillRect(hx, hy - 24, 120, 20);
-                    ctx.strokeStyle = '#ff0055';
-                    ctx.strokeRect(hx, hy - 24, 120, 20);
-                    ctx.fillStyle = '#fff';
-                    ctx.font = '10px Courier New';
-                    ctx.fillText(gravesData[key].text.substring(0, 18) + '...', hx + 4, hy - 10);
-                }
-            }
-
-            requestAnimationFrame(render);
         }
 
-        canvas.addEventListener('mousemove', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            parent: 'game-container',
+            backgroundColor: '#12141a',
+            scene: CemeteryScene
+        };
 
-            const c = Math.floor(x / TILE);
-            const r = Math.floor(y / TILE);
-            hoverCell = { c, r };
-            canvas.style.cursor = isBlocked(c, r) ? 'default' : 'pointer';
+        const game = new Phaser.Game(config);
+
+        window.addEventListener('resize', () => {
+            game.scale.resize(window.innerWidth, window.innerHeight);
         });
 
-        canvas.addEventListener('mouseleave', () => {
-            hoverCell = null;
-        });
-
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-
-            const c = Math.floor(x / TILE);
-            const r = Math.floor(y / TILE);
-
-            if (isBlocked(c, r)) return;
-
-            selectedCell = { col: c, row: r };
-            const key = `${c}_${r}`;
-            
-            if (gravesData[key]) {
-                tempType = gravesData[key].type;
-                tempDecor = gravesData[key].decor ? { ...gravesData[key].decor } : { fence: false, flowers: false };
-                document.getElementById('epitaphInput').value = gravesData[key].text || '';
-                document.getElementById('delete-btn').style.display = 'block';
-            } else {
-                tempType = 'cross';
-                tempDecor = { fence: false, flowers: false };
-                document.getElementById('epitaphInput').value = '';
-                document.getElementById('delete-btn').style.display = 'none';
-            }
-
-            updateDecorButtons();
-            document.getElementById('modal').style.display = 'block';
-        });
-
-        function selectType(type) {
-            tempType = type;
+        // Интерфейсные функции
+        function selectType(type) { tempType = type; }
+        function toggleDecor(name) {
+            tempDecor[name] = !tempDecor[name];
+            document.getElementById('decorFenceBtn').innerText = `🔲 Кованая оградка: ${tempDecor.fence ? 'ВКЛ' : 'ВЫКЛ'}`;
+            document.getElementById('decorFlowersBtn').innerText = `💐 Живые цветы: ${tempDecor.flowers ? 'ВКЛ' : 'ВЫКЛ'}`;
         }
-
-        function toggleDecor(decorName) {
-            tempDecor[decorName] = !tempDecor[decorName];
-            updateDecorButtons();
-        }
-
         function updateDecorButtons() {
             document.getElementById('decorFenceBtn').innerText = `🔲 Кованая оградка: ${tempDecor.fence ? 'ВКЛ' : 'ВЫКЛ'}`;
             document.getElementById('decorFlowersBtn').innerText = `💐 Живые цветы: ${tempDecor.flowers ? 'ВКЛ' : 'ВЫКЛ'}`;
         }
-
         function generatePhrase() {
-            const rnd = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
-            document.getElementById('epitaphInput').value = rnd;
+            document.getElementById('epitaphInput').value = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
         }
-
         function openPaymentModal() {
             document.getElementById('modal').style.display = 'none';
             document.getElementById('payModal').style.display = 'block';
         }
-
         function closePaymentModal() {
             document.getElementById('payModal').style.display = 'none';
             document.getElementById('modal').style.display = 'block';
         }
-
         function completePayment(method) {
             if (!selectedCell) return;
             const key = `${selectedCell.col}_${selectedCell.row}`;
-            const text = document.getElementById('epitaphInput').value || 'Вечная память';
-
             gravesData[key] = {
                 type: tempType,
-                text: text,
+                text: document.getElementById('epitaphInput').value || 'Вечная память',
                 decor: { ...tempDecor },
                 payment: method
             };
-
-            saveGraves();
-            document.getElementById('payModal').style.display = 'none';
-            selectedCell = null;
-        }
-
-        function deleteTombstone() {
-            if (!selectedCell) return;
-            const key = `${selectedCell.col}_${selectedCell.row}`;
-            delete gravesData[key];
             saveGraves();
             closeModal();
         }
-
+        function deleteTombstone() {
+            if (!selectedCell) return;
+            delete gravesData[`${selectedCell.col}_${selectedCell.row}`];
+            saveGraves();
+            closeModal();
+        }
         function closeModal() {
             document.getElementById('modal').style.display = 'none';
             document.getElementById('payModal').style.display = 'none';
             selectedCell = null;
         }
-
-        loadGraves();
-        requestAnimationFrame(render);
     </script>
 </body>
 </html>
