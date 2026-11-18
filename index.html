@@ -244,41 +244,15 @@
         let hoverCell = null;
         let animTime = 0;
 
-        // Генерация высококачественного спрайта катафалка программно внутри Canvas,
-        // что исключает любые внешние зависимости, файлы и ошибки загрузки.
-        const hearseCanvas = document.createElement('canvas');
-        hearseCanvas.width = 240;
-        hearseCanvas.height = 110;
-        const hCtx = hearseCanvas.getContext('2d');
-
-        // Рисуем стильный ретро-катафалк с надписью Press F
-        hCtx.fillStyle = '#0f172a';
-        hCtx.fillRect(10, 40, 200, 42); // Кузов
-        hCtx.fillStyle = '#1e293b';
-        hCtx.fillRect(60, 16, 110, 30); // Кабина
-        hCtx.fillStyle = '#38bdf8'; // Окна
-        hCtx.fillRect(70, 20, 38, 20);
-        hCtx.fillRect(115, 20, 48, 20);
-        // Колеса
-        hCtx.fillStyle = '#020617';
-        hCtx.beginPath(); hCtx.arc(55, 82, 14, 0, Math.PI*2); hCtx.fill();
-        hCtx.beginPath(); hCtx.arc(175, 82, 14, 0, Math.PI*2); hCtx.fill();
-        hCtx.strokeStyle = '#e2e8f0';
-        hCtx.lineWidth = 3;
-        hCtx.beginPath(); hCtx.arc(55, 82, 9, 0, Math.PI*2); hCtx.stroke();
-        hCtx.beginPath(); hCtx.arc(175, 82, 9, 0, Math.PI*2); hCtx.stroke();
-        // Надпись Press F
-        hCtx.fillStyle = '#fbbf24';
-        hCtx.font = 'bold 16px Courier New';
-        hCtx.fillText('Press F', 85, 68);
-        // Венок на крыше
-        hCtx.fillStyle = '#22c55e';
-        hCtx.fillRect(105, 8, 20, 10);
-        hCtx.fillStyle = '#ef4444';
-        hCtx.fillRect(113, 11, 4, 4);
-
+        // Загрузка вашей конкретной картинки катафалка в формате Base64 прямо в память браузера
         const hearseImg = new Image();
-        hearseImg.src = hearseCanvas.toDataURL();
+        fetch('hearse_uri.txt')
+            .then(res => res.text())
+            .then(uri => { hearseImg.src = uri.trim(); })
+            .catch(() => {
+                // Запасной вариант со встроенным напрямую URI вашей картинки
+                hearseImg.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg';
+            });
 
         let funeralAnim = {
             active: false,
@@ -310,14 +284,14 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_ultimate');
+            const saved = localStorage.getItem('cemetery_graves_exact_img');
             if (saved) {
                 try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_ultimate', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_exact_img', JSON.stringify(gravesData));
         }
 
         loadGraves();
@@ -508,9 +482,10 @@
                 }
             }
 
-            if (hearseImg.complete) {
-                const drawWidth = 220;
-                const drawHeight = 100;
+            // Отрисовка вашей точной картинки катафалка
+            if (hearseImg.complete && hearseImg.naturalWidth !== 0) {
+                const drawWidth = 240;
+                const drawHeight = (hearseImg.height / hearseImg.width) * drawWidth;
                 ctx.drawImage(hearseImg, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
             }
         }
