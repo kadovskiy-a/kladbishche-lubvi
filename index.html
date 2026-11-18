@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cemetery of Love — Кладбище Любви (Custom Hearse Edition)</title>
+    <title>Cemetery of Love — Кладбище Любви</title>
     <style>
         * {
             box-sizing: border-box;
@@ -244,10 +244,6 @@
         let hoverCell = null;
         let animTime = 0;
 
-        // Загружаем картинку катафалка из вашего сообщения
-        const hearseImg = new Image();
-        hearseImg.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg'; // Прямая ссылка на предоставленное изображение катафалка с Press F
-
         let funeralAnim = {
             active: false,
             stage: 'driving_in',
@@ -278,14 +274,14 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_hearse_img');
+            const saved = localStorage.getItem('cemetery_graves_stable');
             if (saved) {
                 try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_hearse_img', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_stable', JSON.stringify(gravesData));
         }
 
         loadGraves();
@@ -428,7 +424,7 @@
             ctx.fill();
         }
 
-        // Рендер картинки катафалка
+        // Рендер детального ретро-катафалка с надписью Press F
         function drawFuneralAnimation() {
             if (!funeralAnim.active) return;
 
@@ -437,7 +433,7 @@
 
             let carX, carY;
             if (funeralAnim.stage === 'driving_in') {
-                carX = -150 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
+                carX = -180 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
                 carY = canvas.height * 0.75 * (1 - funeralAnim.progress) + (targetPt.y + 10) * funeralAnim.progress;
                 document.getElementById('funeral-status').innerText = '🚗 Катафалк прибывает на участок...';
 
@@ -450,16 +446,16 @@
                 carY = targetPt.y + 10;
                 document.getElementById('funeral-status').innerText = '⛏️ Проведение ритуала и установка могилы...';
 
-                // Человечки
+                // Маленькие человечки
                 ctx.fillStyle = '#cbd5e1';
-                ctx.fillRect(targetPt.x - 18, targetPt.y + 14, 5, 10);
+                ctx.fillRect(targetPt.x - 20, targetPt.y + 12, 5, 10);
                 ctx.fillStyle = '#e2e8f0';
-                ctx.beginPath(); ctx.arc(targetPt.x - 15, targetPt.y + 11, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(targetPt.x - 17.5, targetPt.y + 9, 2.5, 0, Math.PI*2); ctx.fill();
 
                 ctx.fillStyle = '#cbd5e1';
-                ctx.fillRect(targetPt.x + 14, targetPt.y + 14, 5, 10);
+                ctx.fillRect(targetPt.x + 15, targetPt.y + 12, 5, 10);
                 ctx.fillStyle = '#e2e8f0';
-                ctx.beginPath(); ctx.arc(targetPt.x + 16, targetPt.y + 11, 2.5, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(targetPt.x + 17.5, targetPt.y + 9, 2.5, 0, Math.PI*2); ctx.fill();
 
                 if (funeralAnim.progress >= 1.2) {
                     gravesData[`${funeralAnim.targetCell.c}_${funeralAnim.targetCell.r}`] = funeralAnim.pendingData;
@@ -469,7 +465,7 @@
                 }
             } else if (funeralAnim.stage === 'driving_out') {
                 carX = targetPt.x * (1 - funeralAnim.progress) + (canvas.width + 200) * funeralAnim.progress;
-                carY = (targetPt.y + 10);
+                carY = targetPt.y + 10;
                 document.getElementById('funeral-status').innerText = '🕯️ Вечная память... Катафалк уезжает.';
 
                 if (funeralAnim.progress >= 1) {
@@ -478,12 +474,42 @@
                 }
             }
 
-            // Отрисовка исходной картинки машины
-            if (hearseImg.complete && hearseImg.naturalWidth !== 0) {
-                const drawWidth = 220;
-                const drawHeight = (hearseImg.height / hearseImg.width) * drawWidth;
-                ctx.drawImage(hearseImg, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
-            }
+            // Рисуем стильный ретро-катафалк
+            ctx.save();
+            ctx.translate(carX, carY);
+
+            // Кузов лимузина-катафалка
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(-60, -22, 120, 26);
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(-35, -36, 70, 16); // Кабина
+
+            // Окна
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(-28, -33, 20, 12);
+            ctx.fillRect(2, -33, 25, 12);
+
+            // Надпись Press F на борту
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = 'bold 11px Courier New';
+            ctx.fillText('Press F', -22, -8);
+
+            // Колеса с хромом и вайтволлами
+            ctx.fillStyle = '#020617';
+            ctx.beginPath(); ctx.arc(-35, 6, 9, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(35, 6, 9, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(-35, 6, 6, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(35, 6, 6, 0, Math.PI*2); ctx.stroke();
+
+            // Траурный венок на крыше
+            ctx.fillStyle = '#22c55e';
+            ctx.fillRect(-4, -42, 8, 6);
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(-1, -40, 2, 2);
+
+            ctx.restore();
         }
 
         function render(timestamp) {
