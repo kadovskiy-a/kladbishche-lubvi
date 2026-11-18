@@ -20,6 +20,91 @@
             justify-content: center;
             align-items: center;
         }
+        /* Стили для формы создания захоронения */
+        #grave-form-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .form-box {
+            background: #16192b;
+            border: 2px solid #ff4d4d;
+            padding: 25px;
+            width: 380px;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+        }
+        .form-box h2 {
+            margin-top: 0;
+            color: #ff4d4d;
+            text-align: center;
+            font-size: 22px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #b3b9d1;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            background: #0f111a;
+            border: 1px solid #2e3248;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-gen {
+            background: #2e3248;
+            border: none;
+            color: #fff;
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .btn-gen:hover { background: #3e4463; }
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .btn-submit {
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .btn-submit:hover { background: #ff3333; }
+        .btn-cancel {
+            background: #4a506d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .btn-cancel:hover { background: #5a6285; }
     </style>
     <!-- Подключаем Phaser 3 из CDN -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
@@ -27,7 +112,357 @@
 <body>
     <div id="game-container"></div>
 
-    <!-- Подключаем основной скрипт игры -->
-    <script type="module" src="src/main.js"></script>
+    <!-- HTML Форма создания захоронения (скрыта по умолчанию) -->
+    <div id="grave-form-overlay">
+        <div class="form-box">
+            <h2>Оформление мемориала</h2>
+            <form id="graveForm">
+                <div class="form-group">
+                    <label>Тип памятника:</label>
+                    <select id="tombstoneType">
+                        <option value="0">1. Простой деревянный крест</option>
+                        <option value="1">2. Классическая каменная плита</option>
+                        <option value="2">3. Строгий мраморный обелиск</option>
+                        <option value="3">4. Фигурный ангел</option>
+                        <option value="4">5. Мемориальная ваза</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Инициалы (строго 2 буквы, например: АВ):</label>
+                    <input type="text" id="initialsInput" maxlength="2" placeholder="АВ" required>
+                </div>
+                <div class="form-group">
+                    <label>Эпитафия:</label>
+                    <input type="text" id="epitaphInput" placeholder="Сгорел ярче всех...">
+                    <button type="button" class="btn-gen" id="randomEpitaphBtn">Сгенерировать случайную</button>
+                </div>
+                <div style="font-size: 13px; color: #ffcc00; margin-bottom: 10px;">
+                    Стоимость установки: 99.99 руб. (ЮKassa)
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelGraveBtn">Отмена</button>
+                    <button type="submit" class="btn-submit">Оплатить и создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Сцена главного меню
+        class MenuScene extends Phaser.Scene {
+            constructor() {
+                super('MenuScene');
+            }
+
+            create() {
+                const width = this.scale.width;
+                const height = this.scale.height;
+
+                this.add.rectangle(0, 0, width, height, 0x0f111a).setOrigin(0);
+
+                this.add.text(width / 2, height / 3 - 50, 'КЛАДБИЩЕ ЛЮБВИ', {
+                    fontSize: '48px',
+                    fill: '#ff4d4d',
+                    fontStyle: 'bold',
+                    align: 'center'
+                }).setOrigin(0.5);
+
+                this.add.text(width / 2, height / 3 + 10, '«Здесь покоятся те, кто сгорел ярче всех»', {
+                    fontSize: '18px',
+                    fill: '#8c92ac',
+                    fontStyle: 'italic',
+                    align: 'center'
+                }).setOrigin(0.5);
+
+                const loginButton = this.add.rectangle(width / 2, height / 2 + 50, 260, 50, 0x2e3248)
+                    .setInteractive()
+                    .on('pointerover', () => loginButton.setFillStyle(0x3e4463))
+                    .on('pointerout', () => loginButton.setFillStyle(0x2e3248))
+                    .on('pointerdown', () => {
+                        this.scene.start('GameScene');
+                    });
+
+                this.add.text(width / 2, height / 2 + 50, 'ВОЙТИ НА КЛАДБИЩЕ', {
+                    fontSize: '20px',
+                    fill: '#ffffff'
+                }).setOrigin(0.5);
+            }
+        }
+
+        // Основная игровая сцена кладбища
+        class GameScene extends Phaser.Scene {
+            constructor() {
+                super('GameScene');
+                this.selectedWorldX = 0;
+                this.selectedWorldY = 0;
+            }
+
+            preload() {
+                // Генерируем текстуры надгробий прямо в памяти во время загрузки
+                this.generateTombstoneTextures();
+            }
+
+            // Автоматический генератор спрайтов 5 видов памятников
+            generateTombstoneTextures() {
+                const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+                // 1. Деревянный крест
+                graphics.clear();
+                graphics.fillStyle(0x8B4513, 1);
+                graphics.fillRect(14, 4, 8, 40);
+                graphics.fillRect(6, 14, 24, 8);
+                graphics.generateTexture('tomb_0', 36, 48);
+
+                // 2. Каменная плита
+                graphics.clear();
+                graphics.fillStyle(0x708090, 1);
+                graphics.fillRoundedRect(4, 8, 28, 36, 4);
+                graphics.fillStyle(0x2f3640, 1);
+                graphics.fillRect(8, 12, 20, 12);
+                graphics.generateTexture('tomb_1', 36, 48);
+
+                // 3. Мраморный обелиск
+                graphics.clear();
+                graphics.fillStyle(0xdcdde1, 1);
+                graphics.beginPath();
+                graphics.moveTo(18, 2);
+                graphics.lineTo(32, 12);
+                graphics.lineTo(32, 46);
+                graphics.lineTo(4, 46);
+                graphics.lineTo(4, 12);
+                graphics.closePath();
+                graphics.fillPath();
+                graphics.generateTexture('tomb_2', 36, 48);
+
+                // 4. Фигурный ангел / крест
+                graphics.clear();
+                graphics.fillStyle(0x95afc0, 1);
+                graphics.fillCircle(18, 12, 8);
+                graphics.fillRect(10, 20, 16, 26);
+                graphics.generateTexture('tomb_3', 36, 48);
+
+                // 5. Мемориальная ваза
+                graphics.clear();
+                graphics.fillStyle(0x535c68, 1);
+                graphics.beginPath();
+                graphics.moveTo(10, 16);
+                graphics.lineTo(26, 16);
+                graphics.lineTo(30, 42);
+                graphics.lineTo(6, 42);
+                graphics.closePath();
+                graphics.fillPath();
+                graphics.fillCircle(18, 12, 6);
+                graphics.generateTexture('tomb_4', 36, 48);
+            }
+
+            create() {
+                const mapWidth = 3000;
+                const mapHeight = 3000;
+                
+                // Трава
+                this.add.rectangle(0, 0, mapWidth, mapHeight, 0x1b241f).setOrigin(0);
+                // Дорожки
+                this.add.rectangle(1500, 0, 200, mapHeight, 0x2c2d30).setOrigin(0.5, 0);
+
+                this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
+
+                // Группа для уже созданных захоронений на кладбище
+                this.tombstonesGroup = this.add.group();
+
+                // Создаем игрока
+                this.player = this.add.rectangle(1500, 1500, 32, 48, 0x61afef);
+                this.physics.add.existing(this.player);
+                this.player.body.setCollideWorldBounds(true);
+
+                this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
+                this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
+
+                this.cursors = this.input.keyboard.createCursorKeys();
+                this.wasd = this.input.keyboard.addKeys({
+                    up: Phaser.Input.Keyboard.KeyCodes.W,
+                    down: Phaser.Input.Keyboard.KeyCodes.S,
+                    left: Phaser.Input.Keyboard.KeyCodes.A,
+                    right: Phaser.Input.Keyboard.KeyCodes.D
+                });
+
+                // Клик левой кнопкой мыши по земле кладбища открывает форму захоронения
+                this.input.on('pointerdown', (pointer) => {
+                    // Игнорируем клики, если нажали не на игру или если форма уже открыта
+                    if (document.getElementById('grave-form-overlay').style.display === 'flex') return;
+
+                    const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+                    this.selectedWorldX = worldPoint.x;
+                    this.selectedWorldY = worldPoint.y;
+
+                    // Открываем HTML-форму
+                    document.getElementById('grave-form-overlay').style.display = 'flex';
+                });
+
+                this.setupHTMLFormHandlers();
+                this.createUI();
+            }
+
+            // Настройка логики HTML формы
+            setupHTMLFormHandlers() {
+                const overlay = document.getElementById('grave-form-overlay');
+                const form = document.getElementById('graveForm');
+                const cancelBtn = document.getElementById('cancelGraveBtn');
+                const randomBtn = document.getElementById('randomEpitaphBtn');
+                const initialsInput = document.getElementById('initialsInput');
+
+                // Ограничение ввода инициалов (только буквы, максимум 2)
+                initialsInput.addEventListener('input', (e) => {
+                    let val = e.target.value.toUpperCase().replace(/[^А-ЯA-Z]/g, '');
+                    if (val.length > 2) val = val.substring(0, 2);
+                    e.target.value = val;
+                });
+
+                // Генерация случайной эпитафии
+                const randomPhrases = [
+                    "Сгорел ярче всех в галактике",
+                    "Обещал позвонить и пропал",
+                    "Любил пиво больше, чем меня",
+                    "Его шутки про бывших были смешнее",
+                    "Покойся с миром, мой бывший курс",
+                    "Сердце занято... под склад хлама"
+                ];
+                randomBtn.onclick = () => {
+                    const randomPhrase = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
+                    document.getElementById('epitaphInput').value = randomPhrase;
+                };
+
+                // Отмена
+                cancelBtn.onclick = () => {
+                    overlay.style.display = 'none';
+                };
+
+                // Отправка формы (симуляция оплаты ЮKassa и создание захоронения)
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    const type = document.getElementById('tombstoneType').value;
+                    const initials = initialsInput.value;
+                    const epitaph = document.getElementById('epitaphInput').value || 'Вечная память';
+
+                    if (initials.length < 2) {
+                        alert('Введите ровно две буквы инициалов!');
+                        return;
+                    }
+
+                    // Закрываем форму
+                    overlay.style.display = 'none';
+                    form.reset();
+
+                    // Запускаем анимацию катафалка и установку памятника
+                    this.triggerFuneralSequence(this.selectedWorldX, this.selectedWorldY, type, initials, epitaph);
+                };
+            }
+
+            // Анимация прибытия катафалка и установки памятника
+            triggerFuneralSequence(x, y, type, initials, epitaph) {
+                // Создаем катафалк за пределами экрана слева
+                const hearse = this.add.rectangle(x - 400, y, 80, 40, 0x111111);
+                
+                this.tweens.add({
+                    targets: hearse,
+                    x: x - 30,
+                    duration: 2000,
+                    ease: 'Power2',
+                    onComplete: () => {
+                        // Катафалк остановился, устанавливаем памятник
+                        const tomb = this.add.image(x, y, `tomb_${type}`);
+                        
+                        // Добавляем текст инициалов на памятник
+                        const text = this.add.text(x, y - 5, initials, {
+                            fontSize: '12px',
+                            fill: '#fff',
+                            fontStyle: 'bold'
+                        }).setOrigin(0.5);
+
+                        this.tombstonesGroup.add(tomb);
+                        this.tombstonesGroup.add(text);
+
+                        // Катафалк уезжает дальше вправо
+                        this.tweens.add({
+                            targets: hearse,
+                            x: x + 400,
+                            duration: 2000,
+                            delay: 1000,
+                            ease: 'Power2',
+                            onComplete: () => {
+                                hearse.destroy();
+                            }
+                        });
+                    }
+                });
+            }
+
+            createUI() {
+                const uiText = this.add.text(20, 20, '🏆 Достижение разблокировано:\n«Первый блин комом»\n\n💡 Кликните в любое место кладбища,\nчтобы создать захоронение (99.99₽)', {
+                    fontSize: '15px',
+                    fill: '#ffcc00',
+                    backgroundColor: '#000000aa',
+                    padding: { x: 12, y: 12 }
+                });
+                uiText.setScrollFactor(0);
+
+                this.time.delayedCall(8000, () => {
+                    this.tweens.add({
+                        targets: uiText,
+                        alpha: 0,
+                        duration: 1000,
+                        onComplete: () => uiText.destroy()
+                    });
+                });
+            }
+
+            update() {
+                // Если открыта форма, замораживаем движение персонажа
+                if (document.getElementById('grave-form-overlay').style.display === 'flex') {
+                    this.player.body.setVelocity(0);
+                    return;
+                }
+
+                const speed = 200;
+                const body = this.player.body;
+
+                body.setVelocity(0);
+
+                if (this.cursors.left.isDown || this.wasd.left.isDown) {
+                    body.setVelocityX(-speed);
+                } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+                    body.setVelocityX(speed);
+                }
+
+                if (this.cursors.up.isDown || this.wasd.up.isDown) {
+                    body.setVelocityY(-speed);
+                } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+                    body.setVelocityY(speed);
+                }
+            }
+        }
+
+        // Конфигурация игры
+        const config = {
+            type: Phaser.AUTO,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            parent: 'game-container',
+            pixelArt: true,
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false
+                }
+            },
+            scene: [MenuScene, GameScene]
+        };
+
+        const game = new Phaser.Game(config);
+
+        window.addEventListener('resize', () => {
+            game.scale.resize(window.innerWidth, window.innerHeight);
+        });
+    </script>
 </body>
 </html>
