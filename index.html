@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+
+<html lang="ru">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <title>Cemetery of Love</title>
+
+  <style>
+
+    body {
+
+      margin: 0;
+
+      padding: 0;
+
+      background: #121218;
+
+      color: #fff;
+
+      font-family: monospace;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      overflow: hidden;
+
+    }
+
+    #ui-bar {
+
+      position: absolute;
+
+      top: 10px;
+
+      left: 10px;
+
+      background: rgba(20, 20, 30, 0.9);
+
+      border: 2px solid #5c4b7d;
+
+      padding: 10px 15px;
+
+      z-index: 10;
+
+      pointer-events: none;
+
+    }
+
+    #modal {
+
+      display: none;
+
+      position: absolute;
+
+      top: 50%;
+
+      left: 50%;
+
+      transform: translate(-50%, -50%);
+
+      background: #1e1b29;
+
+      border: 3px solid #9d85c9;
+
+      padding: 20px;
+
+      z-index: 20;
+
+      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+
+      text-align: center;
+
+    }
+
+    input {
+
+      background: #121218;
+
+      border: 1px solid #5c4b7d;
+
+      color: #fff;
+
+      padding: 8px;
+
+      margin: 10px 0;
+
+      width: 220px;
+
+      font-family: inherit;
+
+    }
+
+    button {
+
+      background: #5c4b7d;
+
+      color: #fff;
+
+      border: none;
+
+      padding: 8px 14px;
+
+      cursor: pointer;
+
+      font-family: inherit;
+
+      font-weight: bold;
+
+    }
+
+    button:hover {
+
+      background: #76619e;
+
+    }
+
+    canvas {
+
+      image-rendering: pixelated;
+
+    }
+
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+
+</head>
+
+<body>
+
+
+
+  <div id="ui-bar">
+
+    <div><strong>КЛАДБИЩЕ БЫВШЕЙ ЛЮБВИ</strong></div>
+
+    <div id="coords-display">Наведите на участок...</div>
+
+    <div style="font-size: 12px; color: #aaa; margin-top: 4px;">Кликните на траву, чтобы занять место.</div>
+
+  </div>
+
+
+
+  <div id="modal">
+
+    <div id="modal-title">Занять участок (0, 0)</div>
+
+    <input type="text" id="epitaph-input" placeholder="Введите эпитафию" maxlength="30" />
+
+    <br>
+
+    <button id="confirm-btn">Оплатить и похоронить</button>
+
+    <button id="cancel-btn" style="background: #3a3247;">Отмена</button>
+
+  </div>
+
+
+
+  <script>
+
+    const TILE_SIZE = 48;
+
+    const GRID_COLS = 20;
+
+    const GRID_ROWS = 14;
+
+
+
+    const app = new PIXI.Application({
+
+      width: GRID_COLS * TILE_SIZE,
+
+      height: GRID_ROWS * TILE_SIZE,
+
+      backgroundColor: 0x1d2b1e,
+
+      resolution: 1
+
+    });
+
+    document.body.appendChild(app.view);
+
+
+
+    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
+
+
+
+    const occupiedPlots = new Map();
+
+    let selectedCell = null;
+
+
+
+    const gridContainer = new PIXI.Container();
+
+    const markerContainer = new PIXI.Container();
+
+    const uiContainer = new PIXI.Container();
+
+    app.stage.addChild(gridContainer, markerContainer, uiContainer);
+
+
+
+    const hoverBox = new PIXI.Graphics();
+
+    hoverBox.lineStyle(2, 0x00ffcc, 1);
+
+    hoverBox.drawRect(0, 0, TILE_SIZE, TILE_SIZE);
+
+    hoverBox.visible = false;
+
+    uiContainer.addChild(hoverBox);
+
+
+
+    const tooltip = new PIXI.Text('', {
+
+      fontFamily: 'monospace',
+
+      fontSize: 14,
+
+      fill: 0xffffff,
+
+      backgroundColor: 0x000000,
+
+      padding: 4
+
+    });
+
+    tooltip.visible = false;
+
+    uiContainer.addChild(tooltip);
+
+
+
+    function createCrossSprite(x, y, epitaph) {
+
+      const g = new PIXI.Graphics();
+
+      
+
+      g.beginFill(0x4a3525);
+
+      g.drawRect(8, 32, 32, 10);
+
+      g.endFill();
+
+
+
+      g.beginFill(0xc2b280);
+
+      g.drawRect(21, 10, 6, 26);
+
+      g.drawRect(14, 16, 20, 6);
+
+      g.endFill();
+
+
+
+      g.beginFill(0xfff4d4);
+
+      g.drawRect(21, 10, 2, 26);
+
+      g.endFill();
+
+
+
+      g.x = x * TILE_SIZE;
+
+      g.y = y * TILE_SIZE;
+
+      g.eventMode = 'static';
+
+      g.cursor = 'help';
+
+
+
+      g.on('pointerover', () => {
+
+        tooltip.text = `"${epitaph}"`;
+
+        tooltip.x = g.x + TILE_SIZE / 2 - tooltip.width / 2;
+
+        tooltip.y = g.y - 24;
+
+        tooltip.visible = true;
+
+      });
+
+      g.on('pointerout', () => {
+
+        tooltip.visible = false;
+
+      });
+
+
+
+      markerContainer.addChild(g);
+
+    }
+
+
+
+    for (let row = 0; row < GRID_ROWS; row++) {
+
+      for (let col = 0; col < GRID_COLS; col++) {
+
+        const tile = new PIXI.Graphics();
+
+        
+
+        const isEven = (row + col) % 2 === 0;
+
+        tile.beginFill(isEven ? 0x243b26 : 0x1f3321);
+
+        tile.lineStyle(1, 0x18291a, 0.5);
+
+        tile.drawRect(0, 0, TILE_SIZE, TILE_SIZE);
+
+        tile.endFill();
+
+
+
+        tile.x = col * TILE_SIZE;
+
+        tile.y = row * TILE_SIZE;
+
+        tile.eventMode = 'static';
+
+        tile.cursor = 'pointer';
+
+
+
+        tile.on('pointerover', () => {
+
+          hoverBox.x = tile.x;
+
+          hoverBox.y = tile.y;
+
+          hoverBox.visible = true;
+
+          document.getElementById('coords-display').innerText = `Координаты: (${col}, ${row})`;
+
+        });
+
+
+
+        tile.on('pointerdown', () => {
+
+          const key = `${col},${row}`;
+
+          if (occupiedPlots.has(key)) return;
+
+
+
+          selectedCell = { col, row, key };
+
+          document.getElementById('modal-title').innerText = `Занять участок (${col}, ${row})`;
+
+          document.getElementById('epitaph-input').value = '';
+
+          document.getElementById('modal').style.display = 'block';
+
+        });
+
+
+
+        gridContainer.addChild(tile);
+
+      }
+
+    }
+
+
+
+    occupiedPlots.set('5,4', 'Покойся с миром');
+
+    createCrossSprite(5, 4, 'Покойся с миром');
+
+
+
+    document.getElementById('confirm-btn').addEventListener('click', () => {
+
+      if (!selectedCell) return;
+
+      const text = document.getElementById('epitaph-input').value.trim() || 'Забыто.';
+
+      
+
+      occupiedPlots.set(selectedCell.key, text);
+
+      createCrossSprite(selectedCell.col, selectedCell.row, text);
+
+
+
+      document.getElementById('modal').style.display = 'none';
+
+      selectedCell = null;
+
+    });
+
+
+
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+
+      document.getElementById('modal').style.display = 'none';
+
+      selectedCell = null;
+
+    });
+
+
+
+    let tick = 0;
+
+    app.ticker.add((delta) => {
+
+      tick += 0.05 * delta;
+
+      hoverBox.alpha = 0.6 + Math.sin(tick) * 0.4;
+
+    });
+
+  </script>
+
+</body>
+
+</html>
+
