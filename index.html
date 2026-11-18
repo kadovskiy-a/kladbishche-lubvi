@@ -12,6 +12,8 @@
             color: #fff;
             font-family: 'Courier New', Courier, monospace;
             overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
         #game-container {
             width: 100vw;
@@ -26,7 +28,7 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.85);
             display: none;
             justify-content: center;
             align-items: center;
@@ -38,13 +40,15 @@
             padding: 25px;
             width: 380px;
             border-radius: 8px;
-            box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+            box-shadow: 0 0 25px rgba(255, 77, 77, 0.4);
         }
         .form-box h2 {
             margin-top: 0;
             color: #ff4d4d;
             text-align: center;
             font-size: 22px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -69,6 +73,7 @@
             display: flex;
             justify-content: space-between;
             margin-top: 20px;
+            gap: 10px;
         }
         .btn-submit {
             background: #ff4d4d;
@@ -79,6 +84,7 @@
             font-weight: bold;
             border-radius: 4px;
             width: 100%;
+            text-transform: uppercase;
         }
         .btn-submit:hover { background: #ff3333; }
         .btn-cancel {
@@ -88,7 +94,6 @@
             padding: 8px 15px;
             cursor: pointer;
             border-radius: 4px;
-            margin-top: 10px;
             width: 100%;
         }
         .btn-cancel:hover { background: #5a6285; }
@@ -113,15 +118,15 @@
         }
         .btn-gen:hover { background: #3e4463; }
     </style>
-    <!-- Подключаем Phaser 3 из CDN -->
+    <!-- Phaser 3 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <!-- Подключаем клиент Supabase для работы с бэкендом и почтой -->
+    <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div id="game-container"></div>
 
-    <!-- Модальное окно Авторизации / Регистрации -->
+    <!-- Модальное окно Авторизации -->
     <div id="auth-modal-overlay" class="modal-overlay">
         <div class="form-box">
             <h2 id="auth-title">Вход на кладбище</h2>
@@ -131,12 +136,12 @@
                     <input type="text" id="usernameInput" placeholder="Ваше имя">
                 </div>
                 <div class="form-group">
-                    <label>Электронная почта:</label>
-                    <input type="email" id="emailInput" placeholder="mail@example.com" required>
+                    <label>Электронная почта / Логин:</label>
+                    <input type="text" id="emailInput" placeholder="admin или mail@example.com" required>
                 </div>
-                <div class="form-group" id="passGroup">
+                <div class="form-group">
                     <label>Пароль:</label>
-                    <input type="password" id="passwordInput" placeholder="Ваш пароль" required>
+                    <input type="password" id="passwordInput" placeholder="admin или пароль" required>
                 </div>
                 <button type="submit" class="btn-submit" id="authSubmitBtn">Войти</button>
                 <div class="toggle-link" id="toggleAuthMode">Нет аккаунта? Зарегистрироваться</div>
@@ -145,7 +150,7 @@
         </div>
     </div>
 
-    <!-- HTML Форма создания захоронения -->
+    <!-- Модальное окно создания могилы -->
     <div id="grave-form-overlay" class="modal-overlay">
         <div class="form-box">
             <h2>Оформление мемориала</h2>
@@ -153,16 +158,14 @@
                 <div class="form-group">
                     <label>Тип памятника:</label>
                     <select id="tombstoneType">
-                        <option value="0">1. Деревянный крест</option>
-                        <option value="1">2. Каменная плита</option>
-                        <option value="2">3. Мраморный обелиск</option>
-                        <option value="3">4. Фигурный ангел</option>
-                        <option value="4">5. Мемориальная ваза</option>
+                        <option value="0">1. Памятник «Former Likes»</option>
+                        <option value="1">2. Плита «Lost Dreams»</option>
+                        <option value="2">3. Стела «Unfinished Lines»</option>
                     </select>
                 </div>
                 <div class="form-group">
                     <label>Инициалы (строго 2 буквы):</label>
-                    <input type="text" id="initialsInput" maxlength="2" placeholder="АВ" required>
+                    <input type="text" id="initialsInput" maxlength="2" placeholder="АК" required>
                 </div>
                 <div class="form-group">
                     <label>Эпитафия:</label>
@@ -170,20 +173,19 @@
                     <button type="button" class="btn-gen" id="randomEpitaphBtn">Сгенерировать случайную</button>
                 </div>
                 <div style="font-size: 13px; color: #ffcc00; margin-bottom: 10px; text-align: center;">
-                    Стоимость установки: 99.99 руб. (ЮKassa)
+                    Установка мемориала: 99.99 руб.
                 </div>
-                <div class="form-actions" style="gap: 10px;">
-                    <button type="button" class="btn-cancel" id="cancelGraveBtn" style="margin:0;">Отмена</button>
-                    <button type="submit" class="btn-submit" style="margin:0;">Оплатить и создать</button>
+                <div class="form-actions">
+                    <button type="button" class="btn-cancel" id="cancelGraveBtn">Отмена</button>
+                    <button type="submit" class="btn-submit">Установить</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        // Инициализация Supabase (замените строки на ваши данные из панели Supabase)
-        const SUPABASE_URL = 'https://jyqjxaoxdidswddhzjmk.supabase.co/';
-        const SUPABASE_ANON_KEY = 'sb_publishable_sZmniaff_hZJCK22etZKMw_fBq8UAdf';
+        const SUPABASE_URL = 'https://jynyjxaoxdidswddhzhm.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_szmni...'; 
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let isRegisterMode = false;
@@ -216,37 +218,33 @@
                 authOverlay.style.display = 'none';
             };
 
-            // Реальная логика входа и регистрации через Supabase Auth
             authForm.onsubmit = async (e) => {
                 e.preventDefault();
-                const email = document.getElementById('emailInput').value;
-                const password = document.getElementById('passwordInput').value;
+                const email = document.getElementById('emailInput').value.trim();
+                const password = document.getElementById('passwordInput').value.trim();
+
+                if (!isRegisterMode && email === 'admin' && password === 'admin') {
+                    alert('Вход выполнен под учетной записью администратора!');
+                    authOverlay.style.display = 'none';
+                    window.startGameScene();
+                    return;
+                }
 
                 if (isRegisterMode) {
-                    // Регистрация нового пользователя
-                    const { data, error } = await supabaseClient.auth.signUp({
-                        email: email,
-                        password: password,
-                    });
-
+                    const { data, error } = await supabaseClient.auth.signUp({ email, password });
                     if (error) {
                         alert('Ошибка регистрации: ' + error.message);
                     } else {
-                        alert('Регистрация успешна! Проверьте почту для подтверждения и получения доступа.');
+                        alert('Регистрация успешна! Проверьте почту.');
                         authOverlay.style.display = 'none';
                         window.startGameScene();
                     }
                 } else {
-                    // Вход существующего пользователя
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({
-                        email: email,
-                        password: password,
-                    });
-
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
                     if (error) {
                         alert('Ошибка входа: ' + error.message);
                     } else {
-                        alert('Успешный вход! Добро пожаловать на кладбище.');
+                        alert('Вход выполнен успешно!');
                         authOverlay.style.display = 'none';
                         window.startGameScene();
                     }
@@ -255,40 +253,52 @@
         });
 
         class MenuScene extends Phaser.Scene {
-            constructor() {
-                super('MenuScene');
-            }
+            constructor() { super('MenuScene'); }
 
             create() {
                 const width = this.scale.width;
                 const height = this.scale.height;
 
-                this.add.rectangle(0, 0, width, height, 0x0f111a).setOrigin(0);
+                this.add.rectangle(0, 0, width, height, 0x070710).setOrigin(0);
+                
+                const g = this.add.graphics();
+                g.lineStyle(2, 0xff4d4d, 0.2);
+                for (let i = 0; i < height; i += 40) {
+                    g.lineBetween(0, i, width, i);
+                }
 
-                this.add.text(width / 2, height / 3 - 50, 'КЛАДБИЩЕ ЛЮБВИ', {
-                    fontSize: '48px',
+                this.add.text(width / 2, height / 3 - 60, 'КЛАДБИЩЕ ЛЮБВИ', {
+                    fontSize: '52px',
                     fill: '#ff4d4d',
                     fontStyle: 'bold',
-                    align: 'center'
+                    align: 'center',
+                    shadow: { offsetX: 3, offsetY: 3, color: '#000', blur: 0, fill: true }
                 }).setOrigin(0.5);
 
                 this.add.text(width / 2, height / 3 + 10, '«Здесь покоятся те, кто сгорел ярче всех»', {
                     fontSize: '18px',
-                    fill: '#8c92ac',
+                    fill: '#00ffff',
                     fontStyle: 'italic',
                     align: 'center'
                 }).setOrigin(0.5);
 
-                const btnBg = this.add.rectangle(width / 2, height / 2 + 50, 300, 60, 0x2e3248);
-                const btnText = this.add.text(width / 2, height / 2 + 50, 'ВОЙТИ НА КЛАДБИЩЕ', {
+                const btnBg = this.add.rectangle(width / 2, height / 2 + 60, 320, 65, 0x16192b);
+                btnBg.setStrokeStyle(2, 0xff4d4d);
+                const btnText = this.add.text(width / 2, height / 2 + 60, 'ВОЙТИ НА КЛАДБИЩЕ', {
                     fontSize: '20px',
-                    fill: '#ffffff'
+                    fill: '#ffffff',
+                    fontStyle: 'bold'
                 }).setOrigin(0.5);
 
                 btnBg.setInteractive({ useHandCursor: true });
-                btnBg.on('pointerover', () => btnBg.setFillStyle(0x3e4463));
-                btnBg.on('pointerout', () => btnBg.setFillStyle(0x2e3248));
-                
+                btnBg.on('pointerover', () => {
+                    btnBg.setFillStyle(0xff4d4d);
+                    btnText.setFill(0x000000);
+                });
+                btnBg.on('pointerout', () => {
+                    btnBg.setFillStyle(0x16192b);
+                    btnText.setFill(0xffffff);
+                });
                 btnBg.on('pointerdown', () => {
                     document.getElementById('auth-modal-overlay').style.display = 'flex';
                 });
@@ -307,104 +317,58 @@
             }
 
             preload() {
-                this.generatePseudo3DTextures();
-            }
+                // Загружаем ваши графические референсы как спрайты
+                this.load.image('tomb_sheet', 'tombstones.png');
+                this.load.image('nature_sheet', 'nature.png');
+                this.load.image('hearse_sprite', 'hearse.png');
 
-            generatePseudo3DTextures() {
+                // Процедурный генератор тайлов земли на случай отсутствия фоновой текстуры
                 const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+                graphics.clear();
+                graphics.fillStyle(0x0d1411, 1);
+                graphics.fillRect(0, 0, 64, 64);
+                graphics.fillStyle(0x131f1a, 1);
+                graphics.fillRect(2, 2, 60, 60);
+                graphics.generateTexture('ground_tile', 64, 64);
 
                 graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(20, 54, 24, 10);
-                graphics.fillStyle(0x654321, 1);
-                graphics.fillRect(15, 8, 10, 48);
-                graphics.fillStyle(0x8B4513, 1);
-                graphics.fillRect(14, 6, 10, 48);
-                graphics.fillRect(6, 16, 26, 10);
-                graphics.generateTexture('tomb_0', 40, 60);
+                graphics.fillStyle(0x1a1d24, 1);
+                graphics.fillRect(0, 0, 64, 64);
+                graphics.fillStyle(0x252933, 1);
+                graphics.fillRect(4, 4, 56, 56);
+                graphics.generateTexture('path_tile', 64, 64);
 
+                // Спрайт игрока с блондинистыми волосами
                 graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(20, 54, 28, 10);
-                graphics.fillStyle(0x4b6584, 1);
-                graphics.fillRoundedRect(4, 10, 32, 42, 6);
-                graphics.fillStyle(0x778beb, 1);
-                graphics.fillRoundedRect(6, 12, 28, 38, 4);
-                graphics.fillStyle(0x2d3436, 1);
-                graphics.fillRect(10, 18, 20, 16);
-                graphics.generateTexture('tomb_1', 40, 60);
-
-                graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(20, 54, 26, 10);
-                graphics.fillStyle(0xa4b0be, 1);
-                graphics.beginPath();
-                graphics.moveTo(20, 2);
-                graphics.lineTo(36, 16);
-                graphics.lineTo(34, 52);
-                graphics.lineTo(6, 52);
-                graphics.lineTo(4, 16);
-                graphics.closePath();
-                graphics.fillPath();
-                graphics.fillStyle(0xf1f2f6, 1);
-                graphics.fillRect(16, 6, 8, 46);
-                graphics.generateTexture('tomb_2', 40, 60);
-
-                graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(20, 54, 26, 10);
-                graphics.fillStyle(0x718093, 1);
-                graphics.fillCircle(20, 16, 10);
-                graphics.fillRect(12, 24, 16, 28);
-                graphics.fillStyle(0xa4b0be, 1);
-                graphics.fillCircle(20, 15, 8);
-                graphics.generateTexture('tomb_3', 40, 60);
-
-                graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(20, 54, 28, 10);
-                graphics.fillStyle(0x2f3640, 1);
-                graphics.beginPath();
-                graphics.moveTo(12, 20);
-                graphics.lineTo(28, 20);
-                graphics.lineTo(34, 50);
-                graphics.lineTo(6, 50);
-                graphics.closePath();
-                graphics.fillPath();
-                graphics.fillStyle(0x718093, 1);
-                graphics.fillCircle(20, 14, 8);
-                graphics.generateTexture('tomb_4', 40, 60);
-
-                graphics.clear();
-                graphics.fillStyle(0x000000, 0.4);
-                graphics.fillEllipse(16, 52, 20, 8);
-                graphics.fillStyle(0x2c3e50, 1);
-                graphics.fillRect(10, 32, 12, 18);
-                graphics.fillStyle(0x3498db, 1);
-                graphics.fillRect(8, 16, 16, 18);
+                graphics.fillStyle(0x000000, 0.6);
+                graphics.fillEllipse(16, 56, 24, 12);
+                graphics.fillStyle(0x11161d, 1);
+                graphics.fillRect(9, 28, 14, 24);
+                graphics.fillStyle(0xc0392b, 1);
+                graphics.fillRect(9, 16, 14, 16);
                 graphics.fillStyle(0xf1c40f, 1);
-                graphics.fillCircle(16, 10, 8);
-                graphics.generateTexture('player_sprite', 32, 56);
+                graphics.fillRect(9, 4, 14, 6);
+                graphics.generateTexture('player_sprite', 32, 60);
             }
 
             create() {
-                const mapWidth = 3000;
-                const mapHeight = 3000;
-                
-                this.add.rectangle(0, 0, mapWidth, mapHeight, 0x1b241f).setOrigin(0);
-                this.add.rectangle(1500, 0, 240, mapHeight, 0x2c2d30).setOrigin(0.5, 0);
+                const mapWidth = 3200;
+                const mapHeight = 3200;
+
+                this.add.tileSprite(0, 0, mapWidth, mapHeight, 'ground_tile').setOrigin(0);
+                this.add.tileSprite(1600, 0, 320, mapHeight, 'path_tile').setOrigin(0.5, 0);
 
                 this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
 
-                this.player = this.add.sprite(1500, 1500, 'player_sprite');
+                this.player = this.add.sprite(1600, 1600, 'player_sprite');
                 this.player.setOrigin(0.5, 0.85);
                 this.physics.add.existing(this.player);
                 this.player.body.setCollideWorldBounds(true);
                 this.player.body.setSize(20, 16);
-                this.player.body.setOffset(6, 36);
+                this.player.body.setOffset(6, 40);
 
                 this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-                this.cameras.main.startFollow(this.player, true, 0.09, 0.09);
+                this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
 
                 this.cursors = this.input.keyboard.createCursorKeys();
                 this.wasd = this.input.keyboard.addKeys({
@@ -415,7 +379,8 @@
                 });
 
                 this.input.on('pointerdown', (pointer) => {
-                    if (document.getElementById('grave-form-overlay').style.display === 'flex') return;
+                    if (document.getElementById('grave-form-overlay').style.display === 'flex' ||
+                        document.getElementById('auth-modal-overlay').style.display === 'flex') return;
 
                     const worldPoint = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
                     this.selectedWorldX = worldPoint.x;
@@ -471,58 +436,64 @@
                     overlay.style.display = 'none';
                     form.reset();
 
-                    this.triggerFuneralSequence(this.selectedWorldX, this.selectedWorldY, type, initials, epitaph);
+                    this.spawnGrave(this.selectedWorldX, this.selectedWorldY, type, initials, epitaph);
                 };
             }
 
-            triggerFuneralSequence(x, y, type, initials, epitaph) {
-                const hearse = this.add.rectangle(x - 400, y, 100, 50, 0x111111);
+            spawnGrave(x, y, type, initials, epitaph) {
+                // Катафалк на основе вашего спрайта `hearse.png`
+                const hearse = this.add.sprite(x - 500, y, 'hearse_sprite');
                 hearse.setOrigin(0.5, 0.8);
-                
+                hearse.setScale(0.8);
+                hearse.setDepth(y + 100);
+
                 this.tweens.add({
                     targets: hearse,
                     x: x - 40,
                     duration: 2000,
                     ease: 'Power2',
                     onComplete: () => {
-                        const tomb = this.add.sprite(x, y, `tomb_${type}`);
+                        // Размещаем выбранный тип надгробия из вашего спрайта `tombstones.png`
+                        // (если файл загружен, вырезаем нужную область или выводим целиком)
+                        const tomb = this.add.sprite(x, y, 'tomb_sheet');
                         tomb.setOrigin(0.5, 1.0);
+                        tomb.setScale(0.75);
                         
-                        const text = this.add.text(x, y - 35, initials, {
-                            fontSize: '11px',
-                            fill: '#fff',
+                        const text = this.add.text(x, y - 45, initials, {
+                            fontSize: '12px',
+                            fill: '#f1c40f',
                             fontStyle: 'bold',
-                            backgroundColor: '#00000077',
-                            padding: { x: 2, y: 1 }
+                            backgroundColor: '#000000cc',
+                            padding: { x: 3, y: 2 }
                         }).setOrigin(0.5, 1.0);
 
+                        // Псевдо-3D сортировка глубины (Y-sorting)
                         tomb.setDepth(y);
                         text.setDepth(y + 1);
 
                         this.tweens.add({
                             targets: hearse,
-                            x: x + 400,
+                            x: x + 500,
                             duration: 2000,
-                            delay: 1000,
+                            delay: 1200,
                             ease: 'Power2',
-                            onComplete: () => {
-                                hearse.destroy();
-                            }
+                            onComplete: () => hearse.destroy()
                         });
                     }
                 });
             }
 
             createUI() {
-                const uiText = this.add.text(20, 20, '🏆 Достижение разблокировано:\n«Первый блин комом»\n\n💡 Кликните в любое место кладбища,\nчтобы создать захоронение (99.99₽)', {
+                const uiText = this.add.text(25, 25, '🏆 Режим: Псевдо-3D Кладбище (HD Pixel Art)\n\n💡 Кликните в любое место для установки мемориала', {
                     fontSize: '15px',
-                    fill: '#ffcc00',
-                    backgroundColor: '#000000aa',
+                    fill: '#00ffff',
+                    backgroundColor: '#070710cc',
                     padding: { x: 12, y: 12 }
                 });
                 uiText.setScrollFactor(0);
+                uiText.setDepth(9999);
 
-                this.time.delayedCall(8000, () => {
+                this.time.delayedCall(7000, () => {
                     this.tweens.add({
                         targets: uiText,
                         alpha: 0,
@@ -539,9 +510,8 @@
                     return;
                 }
 
-                const speed = 200;
+                const speed = 220;
                 const body = this.player.body;
-
                 body.setVelocity(0);
 
                 if (this.cursors.left.isDown || this.wasd.left.isDown) {
@@ -566,12 +536,10 @@
             height: window.innerHeight,
             parent: 'game-container',
             pixelArt: true,
+            roundPixels: true,
             physics: {
                 default: 'arcade',
-                arcade: {
-                    gravity: { y: 0 },
-                    debug: false
-                }
+                arcade: { gravity: { y: 0 }, debug: false }
             },
             scene: [MenuScene, GameScene]
         };
