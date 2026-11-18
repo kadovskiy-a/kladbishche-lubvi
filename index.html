@@ -36,59 +36,63 @@
 
             font-family: 'Courier New', Courier, monospace;
 
+            display: flex;
+
+            flex-direction: column;
+
+            align-items: center;
+
+            justify-content: center;
+
+        }
+
+        h1 {
+
+            margin: 5px 0 10px 0;
+
+            font-size: 22px;
+
+            color: #fff;
+
+            text-shadow: 2px 2px #ff0055, -1px -1px #00f0ff;
+
+            letter-spacing: 2px;
+
+            text-transform: uppercase;
+
+        }
+
+        #game-container {
+
+            position: relative;
+
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.85);
+
+            border: 4px solid #333a4d;
+
+            border-radius: 6px;
+
+            overflow: hidden;
+
+            background: #1f3720;
+
+            max-width: 95vw;
+
+            max-height: 82vh;
+
         }
 
         canvas {
 
             display: block;
 
-            width: 100vw;
+            width: 100%;
 
-            height: 100vh;
+            height: auto;
 
             cursor: crosshair;
 
             image-rendering: pixelated;
-
-        }
-
-        /* Плавающий заголовок в стиле 80-х */
-
-        #hud-header {
-
-            position: fixed;
-
-            top: 14px;
-
-            left: 50%;
-
-            transform: translateX(-50%);
-
-            background: rgba(18, 20, 28, 0.85);
-
-            border: 2px solid #ff0055;
-
-            box-shadow: 0 0 15px rgba(255, 0, 85, 0.45);
-
-            padding: 8px 24px;
-
-            border-radius: 4px;
-
-            color: #fff;
-
-            font-size: 20px;
-
-            font-weight: bold;
-
-            letter-spacing: 3px;
-
-            text-transform: uppercase;
-
-            text-shadow: 2px 2px #ff0055, -1px -1px #00f0ff;
-
-            pointer-events: none;
-
-            z-index: 5;
 
         }
 
@@ -98,7 +102,7 @@
 
             display: none;
 
-            position: fixed;
+            position: absolute;
 
             top: 50%;
 
@@ -110,7 +114,7 @@
 
             border: 3px solid #ff0055;
 
-            padding: 22px 26px;
+            padding: 20px 24px;
 
             border-radius: 6px;
 
@@ -120,17 +124,17 @@
 
             box-shadow: 0 0 35px rgba(0, 0, 0, 0.9), 0 0 20px rgba(255, 0, 85, 0.4);
 
-            min-width: 260px;
+            min-width: 240px;
 
         }
 
         #modal h3 {
 
-            margin: 0 0 16px 0;
+            margin: 0 0 14px 0;
 
             color: #ff77a9;
 
-            font-size: 18px;
+            font-size: 17px;
 
             letter-spacing: 1px;
 
@@ -146,15 +150,15 @@
 
             color: #e2e8f0;
 
-            padding: 12px 16px;
+            padding: 10px 14px;
 
-            margin: 8px 0;
+            margin: 6px 0;
 
             cursor: pointer;
 
             font-family: 'Courier New', Courier, monospace;
 
-            font-size: 15px;
+            font-size: 14px;
 
             font-weight: bold;
 
@@ -178,7 +182,7 @@
 
             color: #fff;
 
-            transform: translateX(3px);
+            transform: translateX(2px);
 
         }
 
@@ -208,7 +212,7 @@
 
             color: #ff99bb;
 
-            margin-top: 14px;
+            margin-top: 12px;
 
             text-align: center;
 
@@ -230,25 +234,27 @@
 
 
 
-    <div id="hud-header">Cemetery of Love</div>
+    <h1>Cemetery of Love</h1>
 
-    <canvas id="gameCanvas"></canvas>
+    <div id="game-container">
 
+        <canvas id="gameCanvas" width="960" height="640"></canvas>
 
+        <div id="modal">
 
-    <div id="modal">
+            <h3>Выбор памятника</h3>
 
-        <h3>Выбор памятника</h3>
+            <button class="tombstone-btn" onclick="selectTombstone('cross')">✝ Каменный крест</button>
 
-        <button class="tombstone-btn" onclick="selectTombstone('cross')">✝ Каменный крест</button>
+            <button class="tombstone-btn" onclick="selectTombstone('slab')">🪦 Гранитная плита</button>
 
-        <button class="tombstone-btn" onclick="selectTombstone('slab')">🪦 Гранитная плита</button>
+            <button class="tombstone-btn" onclick="selectTombstone('urn')">🌹 Вазон с розами</button>
 
-        <button class="tombstone-btn" onclick="selectTombstone('urn')">🌹 Вазон с алыми розами</button>
+            <button class="tombstone-btn" id="delete-btn" onclick="deleteTombstone()">🗑 Убрать с участка</button>
 
-        <button class="tombstone-btn" id="delete-btn" onclick="deleteTombstone()">🗑 Убрать с участка</button>
+            <button class="tombstone-btn" id="cancel-btn" onclick="closeModal()">Отмена</button>
 
-        <button class="tombstone-btn" id="cancel-btn" onclick="closeModal()">Отмена</button>
+        </div>
 
     </div>
 
@@ -256,9 +262,11 @@
 
     <script>
 
-        const TILE = 48; // Крупный чёткий пиксель-арт тайл (16x16 виртуальных пикселей * 3)
+        const TILE = 32;
 
-        const P = 3;     // Размер одного "пикселя"
+        const COLS = 30;
+
+        const ROWS = 20;
 
 
 
@@ -268,19 +276,11 @@
 
 
 
-        let cols = 0;
-
-        let rows = 0;
-
         let gravesData = {};
 
         let selectedCell = null;
 
         let hoverCell = null;
-
-        let trees = [];
-
-        let lanterns = [];
 
         let animTime = 0;
 
@@ -290,7 +290,7 @@
 
         function loadGraves() {
 
-            const saved = localStorage.getItem('cemetery_graves_v2') || localStorage.getItem('cemetery_graves');
+            const saved = localStorage.getItem('cemetery_graves_v3') || localStorage.getItem('cemetery_graves');
 
             if (saved) {
 
@@ -312,91 +312,7 @@
 
         function saveGraves() {
 
-            localStorage.setItem('cemetery_graves_v2', JSON.stringify(gravesData));
-
-        }
-
-
-
-        // Расстановка декораций под текущий размер экрана
-
-        function buildLayout() {
-
-            canvas.width = window.innerWidth;
-
-            canvas.height = window.innerHeight;
-
-            cols = Math.ceil(canvas.width / TILE);
-
-            rows = Math.ceil(canvas.height / TILE);
-
-
-
-            const midC = Math.floor(cols / 2);
-
-            const midR = Math.floor(rows / 2);
-
-
-
-            trees = [];
-
-            lanterns = [];
-
-
-
-            // Расставляем деревья по углам и вдоль периметра (внутри ограды)
-
-            const treeSpots = [
-
-                [2, 2], [4, 2], [2, 4],
-
-                [cols - 3, 2], [cols - 5, 2], [cols - 3, 4],
-
-                [2, rows - 3], [4, rows - 3], [2, rows - 5],
-
-                [cols - 3, rows - 3], [cols - 5, rows - 3], [cols - 3, rows - 5],
-
-                [midC - 3, 2], [midC + 3, 2],
-
-                [midC - 3, rows - 3], [midC + 3, rows - 3]
-
-            ];
-
-
-
-            treeSpots.forEach(([c, r], idx) => {
-
-                if (c > 1 && c < cols - 2 && r > 1 && r < rows - 2 && c !== midC && r !== midR) {
-
-                    trees.push({ c, r, type: idx % 2 === 0 ? 'oak' : 'cypress' });
-
-                }
-
-            });
-
-
-
-            // Фонари вдоль центральных аллей
-
-            for (let c = 3; c < cols - 3; c += 5) {
-
-                if (Math.abs(c - midC) > 1) {
-
-                    lanterns.push({ c, r: midR - 1 });
-
-                }
-
-            }
-
-            for (let r = 3; r < rows - 3; r += 4) {
-
-                if (Math.abs(r - midR) > 1) {
-
-                    lanterns.push({ c: midC - 1, r });
-
-                }
-
-            }
+            localStorage.setItem('cemetery_graves_v3', JSON.stringify(gravesData));
 
         }
 
@@ -404,23 +320,17 @@
 
         function isBlocked(c, r) {
 
-            const midC = Math.floor(cols / 2);
+            const midC = Math.floor(COLS / 2);
 
-            const midR = Math.floor(rows / 2);
+            const midR = Math.floor(ROWS / 2);
 
-            // Периметр (забор)
-
-            if (c <= 0 || c >= cols - 1 || r <= 0 || r >= rows - 1) return true;
-
-            // Главные дорожки
+            if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) return true;
 
             if (c === midC || r === midR) return true;
 
-            // Деревья и фонари
+            // Угловые деревья
 
-            if (trees.some(t => t.c === c && t.r === r)) return true;
-
-            if (lanterns.some(l => l.c === c && l.r === r)) return true;
+            if ((c === 3 || c === COLS - 4) && (r === 3 || r === ROWS - 4)) return true;
 
             return false;
 
@@ -428,13 +338,11 @@
 
 
 
-        // Вспомогательная функция рисования пикселей внутри тайла (сетка 16x16)
-
         function px(tileX, tileY, gx, gy, gw, gh, color) {
 
             ctx.fillStyle = color;
 
-            ctx.fillRect(tileX + gx * P, tileY + gy * P, gw * P, gh * P);
+            ctx.fillRect(tileX + gx * 2, tileY + gy * 2, gw * 2, gh * 2);
 
         }
 
@@ -446,39 +354,21 @@
 
             const y = r * TILE;
 
-            const isAlt = (c + r) % 2 === 0;
-
-            ctx.fillStyle = isAlt ? '#233d24' : '#1f3720';
+            ctx.fillStyle = (c + r) % 2 === 0 ? '#233d24' : '#1f3720';
 
             ctx.fillRect(x, y, TILE, TILE);
 
 
 
-            // Детализация травинок (детерминированный псевдорандом по координатам)
-
             const hash = (c * 73 + r * 37) % 11;
 
             px(x, y, 3, 4, 1, 2, '#2e522f');
 
-            px(x, y, 4, 3, 1, 2, '#376138');
-
             px(x, y, 11, 10, 1, 2, '#2e522f');
-
-            px(x, y, 12, 11, 1, 2, '#182b19');
-
-
 
             if (hash === 2 || hash === 7) {
 
-                // Мелкие полевые цветы
-
                 px(x, y, 7, 7, 1, 1, '#f43f5e');
-
-                px(x, y, 8, 8, 1, 1, '#fda4af');
-
-            } else if (hash === 5) {
-
-                px(x, y, 10, 4, 1, 1, '#cbd5e1');
 
             }
 
@@ -492,31 +382,21 @@
 
             const y = r * TILE;
 
-            // Подложка раствора
-
             ctx.fillStyle = '#2c2927';
 
             ctx.fillRect(x, y, TILE, TILE);
 
 
 
-            // Каменная брусчатка
-
             const stones = [
 
-                [1, 1, 6, 4, '#57534e', '#78716c'],
+                [1, 1, 6, 6, '#57534e', '#78716c'],
 
-                [8, 1, 7, 4, '#44403c', '#57534e'],
+                [8, 1, 7, 6, '#44403c', '#57534e'],
 
-                [1, 6, 4, 4, '#44403c', '#57534e'],
+                [1, 8, 7, 7, '#44403c', '#57534e'],
 
-                [6, 6, 5, 4, '#57534e', '#78716c'],
-
-                [12, 6, 3, 4, '#44403c', '#57534e'],
-
-                [1, 11, 7, 4, '#57534e', '#78716c'],
-
-                [9, 11, 6, 4, '#44403c', '#57534e']
+                [9, 8, 6, 7, '#57534e', '#78716c']
 
             ];
 
@@ -532,10 +412,6 @@
 
             if (isCross) {
 
-                // Декоративный центр перекрестка
-
-                px(x, y, 5, 5, 6, 6, '#334155');
-
                 px(x, y, 6, 6, 4, 4, '#ff0055');
 
             }
@@ -550,27 +426,19 @@
 
             const y = r * TILE;
 
-            const midC = Math.floor(cols / 2);
+            const midC = Math.floor(COLS / 2);
 
-            const midR = Math.floor(rows / 2);
+            const midR = Math.floor(ROWS / 2);
 
 
-
-            // Ворота на пересечении с дорожками
 
             if (c === midC || r === midR) {
 
                 drawPathTile(c, r, false);
 
-                // Каменные столбы ворот по бокам
+                px(x, y, 0, 4, 2, 10, '#475569');
 
-                px(x, y, 0, 2, 3, 12, '#475569');
-
-                px(x, y, 13, 2, 3, 12, '#475569');
-
-                px(x, y, 0, 1, 3, 1, '#94a3b8');
-
-                px(x, y, 13, 1, 3, 1, '#94a3b8');
+                px(x, y, 14, 4, 2, 10, '#475569');
 
                 return;
 
@@ -578,27 +446,19 @@
 
 
 
-            // Каменный цоколь
+            px(x, y, 0, 10, 16, 6, '#334155');
 
-            px(x, y, 0, 11, 16, 5, '#334155');
-
-            px(x, y, 0, 11, 16, 1, '#64748b');
+            px(x, y, 0, 10, 16, 1, '#64748b');
 
 
 
-            // Кованые прутья и пики
-
-            const bars = [2, 6, 10, 14];
-
-            bars.forEach(bx => {
+            [3, 8, 13].forEach(bx => {
 
                 px(x, y, bx, 3, 1, 8, '#0f172a');
 
-                px(x, y, bx, 2, 1, 1, '#fbbf24'); // Золотые наконечники пик
+                px(x, y, bx, 2, 1, 1, '#fbbf24');
 
             });
-
-            // Горизонтальные перекладины
 
             px(x, y, 0, 5, 16, 1, '#1e293b');
 
@@ -608,7 +468,7 @@
 
 
 
-        function drawTree(c, r, type) {
+        function drawTree(c, r) {
 
             const x = c * TILE;
 
@@ -616,99 +476,23 @@
 
 
 
-            // Тень на траве
-
-            ctx.fillStyle = 'rgba(10, 18, 12, 0.45)';
+            ctx.fillStyle = 'rgba(10, 18, 12, 0.4)';
 
             ctx.beginPath();
 
-            ctx.ellipse(x + 24, y + 40, 18, 7, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 16, y + 26, 12, 5, 0, 0, Math.PI * 2);
 
             ctx.fill();
 
 
 
-            if (type === 'cypress') {
+            px(x, y, 7, 10, 2, 4, '#3e2723');
 
-                // Ствол
+            px(x, y, 4, 4, 8, 7, '#14331b');
 
-                px(x, y, 7, 12, 2, 3, '#3e2723');
+            px(x, y, 5, 2, 6, 5, '#1e4626');
 
-                // Узкий высокий кипарис
-
-                px(x, y, 5, 8, 6, 5, '#14331b');
-
-                px(x, y, 6, 4, 4, 5, '#1b4324');
-
-                px(x, y, 7, 1, 2, 4, '#245830');
-
-                px(x, y, 6, 5, 1, 6, '#2d6a3b'); // Блик слева
-
-            } else {
-
-                // Раскидистое дерево
-
-                px(x, y, 6, 11, 4, 4, '#4e342e');
-
-                px(x, y, 7, 11, 1, 4, '#6d4c41');
-
-                // Крона
-
-                px(x, y, 2, 5, 12, 6, '#14331b');
-
-                px(x, y, 3, 2, 10, 5, '#1e4626');
-
-                px(x, y, 4, 3, 4, 3, '#2d6a3b'); // Светлая листва
-
-                px(x, y, 9, 6, 4, 3, '#102815'); // Глубокая тень
-
-            }
-
-        }
-
-
-
-        function drawLantern(c, r) {
-
-            const x = c * TILE;
-
-            const y = r * TILE;
-
-            const flicker = Math.sin(animTime * 6 + c + r) * 0.12 + 0.88;
-
-
-
-            // Тёплое свечение вокруг фонаря
-
-            const grad = ctx.createRadialGradient(x + 24, y + 18, 4, x + 24, y + 18, 46 * flicker);
-
-            grad.addColorStop(0, 'rgba(255, 190, 60, 0.35)');
-
-            grad.addColorStop(1, 'rgba(255, 190, 60, 0)');
-
-            ctx.fillStyle = grad;
-
-            ctx.fillRect(x - 24, y - 24, TILE + 48, TILE + 48);
-
-
-
-            // Столб фонаря
-
-            px(x, y, 6, 13, 4, 2, '#1e293b');
-
-            px(x, y, 7, 6, 2, 7, '#334155');
-
-            // Плафон
-
-            px(x, y, 6, 3, 4, 3, '#fef08a');
-
-            px(x, y, 7, 4, 2, 2, '#ffffff');
-
-            // Крышка
-
-            px(x, y, 5, 2, 6, 1, '#0f172a');
-
-            px(x, y, 7, 1, 2, 1, '#0f172a');
+            px(x, y, 6, 3, 2, 2, '#2d6a3b');
 
         }
 
@@ -718,5 +502,281 @@
 
             const x = c * TILE;
 
-            const y = r *
+            const y = r * TILE;
+
+
+
+            px(x, y, 3, 12, 10, 3, '#3e2723');
+
+            px(x, y, 4, 11, 8, 1, '#4e342e');
+
+
+
+            if (type === 'cross') {
+
+                px(x, y, 7, 2, 2, 10, '#94a3b8');
+
+                px(x, y, 4, 4, 8, 2, '#94a3b8');
+
+                px(x, y, 7, 2, 1, 10, '#cbd5e1');
+
+                px(x, y, 4, 4, 8, 1, '#cbd5e1');
+
+            } else if (type === 'slab') {
+
+                px(x, y, 4, 3, 8, 10, '#475569');
+
+                px(x, y, 4, 3, 1, 10, '#94a3b8');
+
+                px(x, y, 6, 6, 4, 1, '#cbd5e1');
+
+                px(x, y, 7, 8, 2, 2, '#ff0055');
+
+            } else if (type === 'urn') {
+
+                px(x, y, 5, 8, 6, 5, '#78350f');
+
+                px(x, y, 4, 7, 8, 1, '#92400e');
+
+                px(x, y, 5, 4, 6, 3, '#15803d');
+
+                px(x, y, 5, 3, 2, 2, '#ff0055');
+
+                px(x, y, 9, 3, 2, 2, '#ff0055');
+
+            }
+
+        }
+
+
+
+        function render(timestamp) {
+
+            animTime = timestamp / 1000;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+
+            const midC = Math.floor(COLS / 2);
+
+            const midR = Math.floor(ROWS / 2);
+
+
+
+            // 1. Земля, дорожки, забор
+
+            for (let r = 0; r < ROWS; r++) {
+
+                for (let c = 0; c < COLS; c++) {
+
+                    if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) {
+
+                        drawGrassTile(c, r);
+
+                        drawFenceTile(c, r);
+
+                    } else if (c === midC || r === midR) {
+
+                        drawPathTile(c, r, c === midC && r === midR);
+
+                    } else {
+
+                        drawGrassTile(c, r);
+
+                    }
+
+                }
+
+            }
+
+
+
+            // 2. Угловые деревья
+
+            const treeSpots = [
+
+                [3, 3], [COLS - 4, 3],
+
+                [3, ROWS - 4], [COLS - 4, ROWS - 4],
+
+                [3, Math.floor(ROWS/2)], [COLS - 4, Math.floor(ROWS/2)]
+
+            ];
+
+            treeSpots.forEach(([tc, tr]) => drawTree(tc, tr));
+
+
+
+            // 3. Подсветка при наведении
+
+            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r)) {
+
+                const hx = hoverCell.c * TILE;
+
+                const hy = hoverCell.r * TILE;
+
+                const pulse = Math.sin(animTime * 6) * 0.2 + 0.8;
+
+                ctx.strokeStyle = `rgba(0, 240, 255, ${pulse})`;
+
+                ctx.lineWidth = 2;
+
+                ctx.strokeRect(hx + 1, hy + 1, TILE - 2, TILE - 2);
+
+            }
+
+
+
+            // 4. Памятники
+
+            for (const key in gravesData) {
+
+                const [c, r] = key.split('_').map(Number);
+
+                if (c < COLS && r < ROWS) {
+
+                    drawGrave(c, r, gravesData[key]);
+
+                }
+
+            }
+
+
+
+            requestAnimationFrame(render);
+
+        }
+
+
+
+        // Клик по холсту
+
+        canvas.addEventListener('mousemove', (e) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+
+            const y = (e.clientY - rect.top) * scaleY;
+
+
+
+            const c = Math.floor(x / TILE);
+
+            const r = Math.floor(y / TILE);
+
+            hoverCell = { c, r };
+
+            canvas.style.cursor = isBlocked(c, r) ? 'default' : 'pointer';
+
+        });
+
+
+
+        canvas.addEventListener('mouseleave', () => {
+
+            hoverCell = null;
+
+        });
+
+
+
+        canvas.addEventListener('click', (e) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+
+            const y = (e.clientY - rect.top) * scaleY;
+
+
+
+            const c = Math.floor(x / TILE);
+
+            const r = Math.floor(y / TILE);
+
+
+
+            if (isBlocked(c, r)) return;
+
+
+
+            selectedCell = { col: c, row: r };
+
+            const key = `${c}_${r}`;
+
+            const delBtn = document.getElementById('delete-btn');
+
+            delBtn.style.display = gravesData[key] ? 'block' : 'none';
+
+
+
+            document.getElementById('modal').style.display = 'block';
+
+        });
+
+
+
+        function selectTombstone(type) {
+
+            if (!selectedCell) return;
+
+            const key = `${selectedCell.col}_${selectedCell.row}`;
+
+            gravesData[key] = type;
+
+            saveGraves();
+
+            closeModal();
+
+        }
+
+
+
+        function deleteTombstone() {
+
+            if (!selectedCell) return;
+
+            const key = `${selectedCell.col}_${selectedCell.row}`;
+
+            delete gravesData[key];
+
+            saveGraves();
+
+            closeModal();
+
+        }
+
+
+
+        function closeModal() {
+
+            document.getElementById('modal').style.display = 'none';
+
+            selectedCell = null;
+
+        }
+
+
+
+        // Запуск
+
+        loadGraves();
+
+        requestAnimationFrame(render);
+
+    </script>
+
+</body>
+
+</html>
 
