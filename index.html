@@ -96,8 +96,6 @@
 
         }
 
-        /* Общие стили модальных окон */
-
         .modal {
 
             display: none;
@@ -394,7 +392,7 @@
 
             </div>
 
-            <div class="pay-option" onclick="completePayment('memories')|">
+            <div class="pay-option" onclick="completePayment('memories')">
 
                 <strong>Оплатить тёплыми воспоминаниями</strong><br><span style="font-size:11px; color:#94a3b8;">*100% скидка на ностальгию</span>
 
@@ -426,7 +424,7 @@
 
 
 
-        let gravesData = {}; // { "c_r": { type, text } }
+        let gravesData = {};
 
         let selectedCell = null;
 
@@ -477,8 +475,6 @@
                 }
 
             } else {
-
-                // Обратная совместимость со старыми сохранениями
 
                 const old = localStorage.getItem('cemetery_graves_v3');
 
@@ -684,5 +680,375 @@
 
             px(x, y, 5, 2, 6, 5, '#1e4626');
 
-            px(x, y,
+            px(x, y, 6, 3, 2, 2, '#2d6a3b');
+
+        }
+
+
+
+        function drawGrave(c, r, graveObj) {
+
+            const x = c * TILE;
+
+            const y = r * TILE;
+
+            const type = graveObj.type;
+
+
+
+            px(x, y, 3, 12, 10, 3, '#3e2723');
+
+            px(x, y, 4, 11, 8, 1, '#4e342e');
+
+
+
+            if (type === 'cross') {
+
+                px(x, y, 7, 2, 2, 10, '#94a3b8');
+
+                px(x, y, 4, 4, 8, 2, '#94a3b8');
+
+                px(x, y, 7, 2, 1, 10, '#cbd5e1');
+
+                px(x, y, 4, 4, 8, 1, '#cbd5e1');
+
+            } else if (type === 'slab') {
+
+                px(x, y, 4, 3, 8, 10, '#475569');
+
+                px(x, y, 4, 3, 1, 10, '#94a3b8');
+
+                px(x, y, 6, 6, 4, 1, '#cbd5e1');
+
+                px(x, y, 7, 8, 2, 2, '#ff0055');
+
+            } else if (type === 'urn') {
+
+                px(x, y, 5, 8, 6, 5, '#78350f');
+
+                px(x, y, 4, 7, 8, 1, '#92400e');
+
+                px(x, y, 5, 4, 6, 3, '#15803d');
+
+                px(x, y, 5, 3, 2, 2, '#ff0055');
+
+                px(x, y, 9, 3, 2, 2, '#ff0055');
+
+            }
+
+        }
+
+
+
+        function render(timestamp) {
+
+            animTime = timestamp / 1000;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+
+            const midC = Math.floor(COLS / 2);
+
+            const midR = Math.floor(ROWS / 2);
+
+
+
+            for (let r = 0; r < ROWS; r++) {
+
+                for (let c = 0; c < COLS; c++) {
+
+                    if (c === 0 || c === COLS - 1 || r === 0 || r === ROWS - 1) {
+
+                        drawGrassTile(c, r);
+
+                        drawFenceTile(c, r);
+
+                    } else if (c === midC || r === midR) {
+
+                        drawPathTile(c, r, c === midC && r === midR);
+
+                    } else {
+
+                        drawGrassTile(c, r);
+
+                    }
+
+                }
+
+            }
+
+
+
+            const treeSpots = [
+
+                [3, 3], [COLS - 4, 3],
+
+                [3, ROWS - 4], [COLS - 4, ROWS - 4],
+
+                [3, Math.floor(ROWS/2)], [COLS - 4, Math.floor(ROWS/2)]
+
+            ];
+
+            treeSpots.forEach(([tc, tr]) => drawTree(tc, tr));
+
+
+
+            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r)) {
+
+                const hx = hoverCell.c * TILE;
+
+                const hy = hoverCell.r * TILE;
+
+                const pulse = Math.sin(animTime * 6) * 0.2 + 0.8;
+
+                ctx.strokeStyle = `rgba(0, 240, 255, ${pulse})`;
+
+                ctx.lineWidth = 2;
+
+                ctx.strokeRect(hx + 1, hy + 1, TILE - 2, TILE - 2);
+
+
+
+                const key = `${hoverCell.c}_${hoverCell.r}`;
+
+                if (gravesData[key] && gravesData[key].text) {
+
+                    ctx.fillStyle = 'rgba(18, 20, 26, 0.9)';
+
+                    ctx.fillRect(hx, hy - 24, 120, 20);
+
+                    ctx.strokeStyle = '#ff0055';
+
+                    ctx.strokeRect(hx, hy - 24, 120, 20);
+
+                    ctx.fillStyle = '#fff';
+
+                    ctx.font = '10px Courier New';
+
+                    ctx.fillText(gravesData[key].text.substring(0, 18) + '...', hx + 4, hy - 10);
+
+                }
+
+            }
+
+
+
+            for (const key in gravesData) {
+
+                const [c, r] = key.split('_').map(Number);
+
+                if (c < COLS && r < ROWS) {
+
+                    drawGrave(c, r, gravesData[key]);
+
+                }
+
+            }
+
+
+
+            requestAnimationFrame(render);
+
+        }
+
+
+
+        canvas.addEventListener('mousemove', (e) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+
+            const y = (e.clientY - rect.top) * scaleY;
+
+
+
+            const c = Math.floor(x / TILE);
+
+            const r = Math.floor(y / TILE);
+
+            hoverCell = { c, r };
+
+            canvas.style.cursor = isBlocked(c, r) ? 'default' : 'pointer';
+
+        });
+
+
+
+        canvas.addEventListener('mouseleave', () => {
+
+            hoverCell = null;
+
+        });
+
+
+
+        canvas.addEventListener('click', (e) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const scaleX = canvas.width / rect.width;
+
+            const scaleY = canvas.height / rect.height;
+
+            const x = (e.clientX - rect.left) * scaleX;
+
+            const y = (e.clientY - rect.top) * scaleY;
+
+
+
+            const c = Math.floor(x / TILE);
+
+            const r = Math.floor(y / TILE);
+
+
+
+            if (isBlocked(c, r)) return;
+
+
+
+            selectedCell = { col: c, row: r };
+
+            const key = `${c}_${r}`;
+
+            
+
+            if (gravesData[key]) {
+
+                tempType = gravesData[key].type;
+
+                document.getElementById('epitaphInput').value = gravesData[key].text || '';
+
+                document.getElementById('delete-btn').style.display = 'block';
+
+            } else {
+
+                tempType = 'cross';
+
+                document.getElementById('epitaphInput').value = '';
+
+                document.getElementById('delete-btn').style.display = 'none';
+
+            }
+
+
+
+            document.getElementById('modal').style.display = 'block';
+
+        });
+
+
+
+        function selectType(type) {
+
+            tempType = type;
+
+        }
+
+
+
+        function generatePhrase() {
+
+            const rnd = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
+
+            document.getElementById('epitaphInput').value = rnd;
+
+        }
+
+
+
+        function openPaymentModal() {
+
+            document.getElementById('modal').style.display = 'none';
+
+            document.getElementById('payModal').style.display = 'block';
+
+        }
+
+
+
+        function closePaymentModal() {
+
+            document.getElementById('payModal').style.display = 'none';
+
+            document.getElementById('modal').style.display = 'block';
+
+        }
+
+
+
+        function completePayment(method) {
+
+            if (!selectedCell) return;
+
+            const key = `${selectedCell.col}_${selectedCell.row}`;
+
+            const text = document.getElementById('epitaphInput').value || 'Вечная память';
+
+
+
+            gravesData[key] = {
+
+                type: tempType,
+
+                text: text,
+
+                payment: method
+
+            };
+
+
+
+            saveGraves();
+
+            document.getElementById('payModal').style.display = 'none';
+
+            selectedCell = null;
+
+        }
+
+
+
+        function deleteTombstone() {
+
+            if (!selectedCell) return;
+
+            const key = `${selectedCell.col}_${selectedCell.row}`;
+
+            delete gravesData[key];
+
+            saveGraves();
+
+            closeModal();
+
+        }
+
+
+
+        function closeModal() {
+
+            document.getElementById('modal').style.display = 'none';
+
+            document.getElementById('payModal').style.display = 'none';
+
+            selectedCell = null;
+
+        }
+
+
+
+        loadGraves();
+
+        requestAnimationFrame(render);
+
+    </script>
+
+</body>
+
+</html>
 
