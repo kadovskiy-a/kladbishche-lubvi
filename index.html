@@ -158,9 +158,10 @@
                 <div class="form-group">
                     <label>Тип памятника:</label>
                     <select id="tombstoneType">
-                        <option value="0">1. Памятник «Former Likes»</option>
-                        <option value="1">2. Плита «Lost Dreams»</option>
-                        <option value="2">3. Стела «Unfinished Lines»</option>
+                        <option value="0">1. Ретро-крест с гирляндой</option>
+                        <option value="2">2. Готическая плита «Former Likes»</option>
+                        <option value="1">3. Каменная плита «Lost Dreams»</option>
+                        <option value="3">4. Стела «Unfinished Lines»</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -317,49 +318,177 @@
             }
 
             preload() {
-                // Загружаем ваши графические референсы как спрайты
-                this.load.image('tomb_sheet', 'tombstones.png');
-                this.load.image('nature_sheet', 'nature.png');
-                this.load.image('hearse_sprite', 'hearse.png');
+                this.generateAdvancedPixelArt();
+            }
 
-                // Процедурный генератор тайлов земли на случай отсутствия фоновой текстуры
-                const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-                graphics.clear();
-                graphics.fillStyle(0x0d1411, 1);
-                graphics.fillRect(0, 0, 64, 64);
-                graphics.fillStyle(0x131f1a, 1);
-                graphics.fillRect(2, 2, 60, 60);
-                graphics.generateTexture('ground_tile', 64, 64);
+            generateAdvancedPixelArt() {
+                const g = this.make.graphics({ x: 0, y: 0, add: false });
 
-                graphics.clear();
-                graphics.fillStyle(0x1a1d24, 1);
-                graphics.fillRect(0, 0, 64, 64);
-                graphics.fillStyle(0x252933, 1);
-                graphics.fillRect(4, 4, 56, 56);
-                graphics.generateTexture('path_tile', 64, 64);
+                // 1. Плитка земли с микротекстурой и травой
+                g.clear();
+                g.fillStyle(0x0a100e, 1);
+                g.fillRect(0, 0, 64, 64);
+                g.fillStyle(0x111c18, 1);
+                g.fillRect(2, 2, 60, 60);
+                // Детали травы и снежных вкраплений
+                g.fillStyle(0x182a23, 1);
+                g.fillRect(8, 12, 6, 3);
+                g.fillRect(36, 42, 8, 4);
+                g.fillStyle(0xdcdde1, 0.4); // Снежок по краям
+                g.fillRect(2, 2, 16, 2);
+                g.fillRect(2, 4, 2, 12);
+                g.generateTexture('ground_tile', 64, 64);
 
-                // Спрайт игрока с блондинистыми волосами
-                graphics.clear();
-                graphics.fillStyle(0x000000, 0.6);
-                graphics.fillEllipse(16, 56, 24, 12);
-                graphics.fillStyle(0x11161d, 1);
-                graphics.fillRect(9, 28, 14, 24);
-                graphics.fillStyle(0xc0392b, 1);
-                graphics.fillRect(9, 16, 14, 16);
-                graphics.fillStyle(0xf1c40f, 1);
-                graphics.fillRect(9, 4, 14, 6);
-                graphics.generateTexture('player_sprite', 32, 60);
+                // 2. Центральная аллея (брусчатка)
+                g.clear();
+                g.fillStyle(0x151820, 1);
+                g.fillRect(0, 0, 64, 64);
+                g.fillStyle(0x1f2430, 1);
+                g.fillRect(4, 4, 56, 56);
+                g.lineStyle(1, 0x0f1117, 1);
+                g.strokeRect(4, 4, 56, 56);
+                g.generateTexture('path_tile', 64, 64);
+
+                // 3. Надгробие №1: Готическая плита (Former Likes)
+                g.clear();
+                g.fillStyle(0x000000, 0.6);
+                g.fillEllipse(24, 62, 36, 14); // Глубокая тень
+                g.fillStyle(0x2f3640, 1);
+                g.fillRoundedRect(6, 12, 36, 48, { tl: 16, tr: 16, bl: 2, br: 2 });
+                g.fillStyle(0x4b6584, 1);
+                g.fillRoundedRect(9, 15, 30, 42, { tl: 14, tr: 14, bl: 1, br: 1 });
+                // Внутренняя ниша и цветы внизу
+                g.fillStyle(0x1e272e, 1);
+                g.fillRect(14, 22, 20, 24);
+                g.fillStyle(0x842e2b, 1); // Букет роз
+                g.fillCircle(24, 54, 5);
+                g.fillStyle(0x27ae60, 1);
+                g.fillRect(20, 52, 8, 6);
+                g.generateTexture('tomb_0', 48, 68);
+
+                // 4. Надгробие №2: Плита (Lost Dreams)
+                g.clear();
+                g.fillStyle(0x000000, 0.6);
+                g.fillEllipse(24, 62, 38, 14);
+                g.fillStyle(0x353b48, 1);
+                g.fillRect(4, 18, 40, 42);
+                g.fillStyle(0x718093, 1);
+                g.fillRect(7, 21, 34, 36);
+                g.fillStyle(0x2f3640, 1);
+                g.fillRect(11, 26, 26, 26);
+                g.generateTexture('tomb_1', 48, 68);
+
+                // 5. Надгробие №3: Крест с венком
+                g.clear();
+                g.fillStyle(0x000000, 0.6);
+                g.fillEllipse(24, 62, 32, 14);
+                g.fillStyle(0x3e2714, 1);
+                g.fillRect(20, 10, 8, 52);
+                g.fillStyle(0x5c3a21, 1);
+                g.fillRect(10, 20, 28, 8);
+                // Венок
+                g.fillStyle(0x27ae60, 1);
+                g.fillCircle(24, 24, 7);
+                g.fillStyle(0x1e272e, 1);
+                g.fillCircle(24, 24, 4);
+                g.generateTexture('tomb_2', 48, 68);
+
+                // 6. Дерево: Плакучая ива (объемная крона + ствол)
+                g.clear();
+                g.fillStyle(0x000000, 0.7);
+                g.fillEllipse(48, 110, 70, 24);
+                // Ствол
+                g.fillStyle(0x2c1d11, 1);
+                g.fillRect(40, 70, 16, 45);
+                // Ветви и свисающая листва
+                g.fillStyle(0x192e22, 1);
+                g.fillCircle(48, 45, 36);
+                g.fillStyle(0x234231, 1);
+                g.fillCircle(30, 55, 24);
+                g.fillCircle(66, 55, 24);
+                // Свисающие локоны листвы
+                g.fillStyle(0x15281e, 1);
+                g.fillRect(18, 50, 8, 45);
+                g.fillRect(28, 65, 8, 40);
+                g.fillRect(60, 65, 8, 40);
+                g.fillRect(70, 50, 8, 45);
+                g.generateTexture('tree_willow', 96, 120);
+
+                // 7. Декоративный куст
+                g.clear();
+                g.fillStyle(0x000000, 0.5);
+                g.fillEllipse(32, 45, 48, 16);
+                g.fillStyle(0x16241b, 1);
+                g.fillCircle(20, 30, 16);
+                g.fillCircle(40, 26, 20);
+                g.fillCircle(30, 38, 15);
+                g.fillStyle(0xdcdde1, 0.5); // Иней на кустах
+                g.fillCircle(36, 16, 6);
+                g.generateTexture('bush_cluster', 64, 52);
+
+                // 8. Спрайт игрока (Ретро-персонаж в плаще и с блондинистыми волосами)
+                g.clear();
+                g.fillStyle(0x000000, 0.6);
+                g.fillEllipse(16, 56, 22, 12);
+                // Плащ
+                g.fillStyle(0x11161d, 1);
+                g.fillRect(9, 28, 14, 24);
+                // Одежда
+                g.fillStyle(0xc0392b, 1);
+                g.fillRect(9, 16, 14, 16);
+                // Волосы (блонд) и голова
+                g.fillStyle(0xf1c40f, 1);
+                g.fillRect(9, 4, 14, 8);
+                g.generateTexture('player_sprite', 32, 60);
+
+                // 9. Катафалк (ретро-машина)
+                g.clear();
+                g.fillStyle(0x000000, 0.7);
+                g.fillEllipse(70, 48, 120, 20);
+                g.fillStyle(0x111217, 1);
+                g.fillRoundedRect(10, 15, 120, 32, 6);
+                g.fillStyle(0x1a1d24, 1);
+                g.fillRoundedRect(35, 6, 60, 22, 4); // Кабина
+                // Колеса
+                g.fillStyle(0x0b0b0b, 1);
+                g.fillCircle(30, 44, 10);
+                g.fillCircle(105, 44, 10);
+                g.fillStyle(0xdcdde1, 1);
+                g.fillCircle(30, 44, 4);
+                g.fillCircle(105, 44, 4);
+                g.generateTexture('hearse_sprite', 140, 60);
             }
 
             create() {
                 const mapWidth = 3200;
                 const mapHeight = 3200;
 
+                // Земля и центральная дорога
                 this.add.tileSprite(0, 0, mapWidth, mapHeight, 'ground_tile').setOrigin(0);
                 this.add.tileSprite(1600, 0, 320, mapHeight, 'path_tile').setOrigin(0.5, 0);
 
+                // Генерируем элементы окружения (деревья и кусты по краям аллеи)
+                this.environmentGroup = this.add.group();
+                for (let y = 200; y < mapHeight - 200; y += 350) {
+                    // Деревья слева
+                    if (Math.random() > 0.3) {
+                        const tree = this.add.sprite(Phaser.Math.Between(200, 1350), y, 'tree_willow');
+                        tree.setOrigin(0.5, 0.9);
+                        tree.setDepth(y); // Y-depth сортировка
+                        this.environmentGroup.add(tree);
+                    }
+                    // Кусты справа
+                    if (Math.random() > 0.2) {
+                        const bush = this.add.sprite(Phaser.Math.Between(1850, 3000), y + 100, 'bush_cluster');
+                        bush.setOrigin(0.5, 0.8);
+                        bush.setDepth(y + 100);
+                        this.environmentGroup.add(bush);
+                    }
+                }
+
                 this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
 
+                // Игрок
                 this.player = this.add.sprite(1600, 1600, 'player_sprite');
                 this.player.setOrigin(0.5, 0.85);
                 this.physics.add.existing(this.player);
@@ -441,30 +570,26 @@
             }
 
             spawnGrave(x, y, type, initials, epitaph) {
-                // Катафалк на основе вашего спрайта `hearse.png`
+                // Выезд катафалка
                 const hearse = this.add.sprite(x - 500, y, 'hearse_sprite');
                 hearse.setOrigin(0.5, 0.8);
-                hearse.setScale(0.8);
                 hearse.setDepth(y + 100);
 
                 this.tweens.add({
                     targets: hearse,
                     x: x - 40,
-                    duration: 2000,
+                    duration: 1800,
                     ease: 'Power2',
                     onComplete: () => {
-                        // Размещаем выбранный тип надгробия из вашего спрайта `tombstones.png`
-                        // (если файл загружен, вырезаем нужную область или выводим целиком)
-                        const tomb = this.add.sprite(x, y, 'tomb_sheet');
+                        const tomb = this.add.sprite(x, y, `tomb_${type}`);
                         tomb.setOrigin(0.5, 1.0);
-                        tomb.setScale(0.75);
                         
-                        const text = this.add.text(x, y - 45, initials, {
+                        const text = this.add.text(x, y - 48, initials, {
                             fontSize: '12px',
                             fill: '#f1c40f',
                             fontStyle: 'bold',
                             backgroundColor: '#000000cc',
-                            padding: { x: 3, y: 2 }
+                            padding: { x: 4, y: 2 }
                         }).setOrigin(0.5, 1.0);
 
                         // Псевдо-3D сортировка глубины (Y-sorting)
@@ -474,8 +599,8 @@
                         this.tweens.add({
                             targets: hearse,
                             x: x + 500,
-                            duration: 2000,
-                            delay: 1200,
+                            duration: 1800,
+                            delay: 1000,
                             ease: 'Power2',
                             onComplete: () => hearse.destroy()
                         });
@@ -484,7 +609,7 @@
             }
 
             createUI() {
-                const uiText = this.add.text(25, 25, '🏆 Режим: Псевдо-3D Кладбище (HD Pixel Art)\n\n💡 Кликните в любое место для установки мемориала', {
+                const uiText = this.add.text(25, 25, '🏆 Режим: Атмосферное Псевдо-3D Кладбище\n\n💡 Кликните в любое место для установки мемориала', {
                     fontSize: '15px',
                     fill: '#00ffff',
                     backgroundColor: '#070710cc',
@@ -526,6 +651,7 @@
                     body.setVelocityY(speed);
                 }
 
+                // Сортировка глубины игрока относительно других объектов
                 this.player.setDepth(this.player.y);
             }
         }
