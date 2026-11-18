@@ -4,131 +4,161 @@
 
 <head>
 
-  <meta charset="UTF-8">
+    <meta charset="UTF-8">
 
-  <title>Cemetery of Love</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
+    <title>Cemetery of Love - Кладбище Любви</title>
 
-    body {
+    <style>
 
-      margin: 0;
+        body {
 
-      padding: 0;
+            margin: 0;
 
-      background: #121218;
+            padding: 0;
 
-      color: #fff;
+            background-color: #1a1c23;
 
-      font-family: monospace;
+            color: #fff;
 
-      display: flex;
+            font-family: 'Courier New', Courier, monospace;
 
-      flex-direction: column;
+            display: flex;
 
-      align-items: center;
+            flex-direction: column;
 
-      overflow: hidden;
+            align-items: center;
 
-    }
+            justify-content: center;
 
-    #ui-bar {
+            min-height: 100vh;
 
-      position: absolute;
+            overflow: hidden;
 
-      top: 10px;
+        }
 
-      left: 10px;
+        h1 {
 
-      background: rgba(20, 20, 30, 0.9);
+            margin: 10px 0;
 
-      border: 2px solid #5c4b7d;
+            font-size: 24px;
 
-      padding: 10px 15px;
+            text-shadow: 2px 2px #ff0055;
 
-      z-index: 10;
+            letter-spacing: 2px;
 
-      pointer-events: none;
+        }
 
-    }
+        #game-container {
 
-    #modal {
+            position: relative;
 
-      display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 
-      position: absolute;
+            border: 4px solid #333a4d;
 
-      top: 50%;
+            border-radius: 4px;
 
-      left: 50%;
+            overflow: hidden;
 
-      transform: translate(-50%, -50%);
+        }
 
-      background: #1e1b29;
+        /* Модальное окно выбора надгробия */
 
-      border: 3px solid #9d85c9;
+        #modal {
 
-      padding: 20px;
+            display: none;
 
-      z-index: 20;
+            position: absolute;
 
-      box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            top: 50%;
 
-      text-align: center;
+            left: 50%;
 
-    }
+            transform: translate(-50%, -50%);
 
-    input {
+            background: #252836;
 
-      background: #121218;
+            border: 3px solid #ff0055;
 
-      border: 1px solid #5c4b7d;
+            padding: 20px;
 
-      color: #fff;
+            border-radius: 8px;
 
-      padding: 8px;
+            z-index: 10;
 
-      margin: 10px 0;
+            text-align: center;
 
-      width: 220px;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.4);
 
-      font-family: inherit;
+        }
 
-    }
+        #modal h3 {
 
-    button {
+            margin-top: 0;
 
-      background: #5c4b7d;
+            color: #ff77a9;
 
-      color: #fff;
+        }
 
-      border: none;
+        .tombstone-btn {
 
-      padding: 8px 14px;
+            background: #1a1c23;
 
-      cursor: pointer;
+            border: 2px solid #555;
 
-      font-family: inherit;
+            color: #fff;
 
-      font-weight: bold;
+            padding: 10px 15px;
 
-    }
+            margin: 5px;
 
-    button:hover {
+            cursor: pointer;
 
-      background: #76619e;
+            font-family: 'Courier New', Courier, monospace;
 
-    }
+            font-weight: bold;
 
-    canvas {
+            transition: 0.2s;
 
-      image-rendering: pixelated;
+            border-radius: 4px;
 
-    }
+            display: block;
 
-  </style>
+            width: 180px;
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
+        }
+
+        .tombstone-btn:hover {
+
+            border-color: #ff0055;
+
+            background: #2d3246;
+
+        }
+
+        #cancel-btn {
+
+            background: #441a22;
+
+            border-color: #ff4444;
+
+            margin-top: 10px;
+
+        }
+
+        #cancel-btn:hover {
+
+            background: #66222b;
+
+        }
+
+    </style>
+
+    <!-- Подключаем PixiJS для графики -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
 
 </head>
 
@@ -136,303 +166,199 @@
 
 
 
-  <div id="ui-bar">
+    <h1>Cemetery of Love</h1>
 
-    <div><strong>КЛАДБИЩЕ БЫВШЕЙ ЛЮБВИ</strong></div>
+    <div id="game-container">
 
-    <div id="coords-display">Наведите на участок...</div>
+        <!-- Модальное окно выбора -->
 
-    <div style="font-size: 12px; color: #aaa; margin-top: 4px;">Кликните на траву, чтобы занять место.</div>
+        <div id="modal">
 
-  </div>
+            <h3>Выбор надгробия</h3>
 
+            <button class="tombstone-btn" onclick="selectTombstone('cross')">✝ Крест</button>
 
+            <button class="tombstone-btn" onclick="selectTombstone('slab')">🏛 Плита (Стела)</button>
 
-  <div id="modal">
+            <button class="tombstone-btn" onclick="selectTombstone('urn')">🏺 Урна с цветами</button>
 
-    <div id="modal-title">Занять участок (0, 0)</div>
+            <button class="tombstone-btn" id="cancel-btn" onclick="closeModal()">Отмена</button>
 
-    <input type="text" id="epitaph-input" placeholder="Введите эпитафию" maxlength="30" />
+        </div>
 
-    <br>
+    </div>
 
-    <button id="confirm-btn">Оплатить и похоронить</button>
 
-    <button id="cancel-btn" style="background: #3a3247;">Отмена</button>
 
-  </div>
+    <script>
 
+        const GRID_SIZE = 32;
 
+        const COLS = 20;
 
-  <script>
+        const ROWS = 15;
 
-    const TILE_SIZE = 48;
+        const WIDTH = COLS * GRID_SIZE;
 
-    const GRID_COLS = 20;
+        const HEIGHT = ROWS * GRID_SIZE;
 
-    const GRID_ROWS = 14;
 
 
-
-    const app = new PIXI.Application({
-
-      width: GRID_COLS * TILE_SIZE,
-
-      height: GRID_ROWS * TILE_SIZE,
-
-      backgroundColor: 0x1d2b1e,
-
-      resolution: 1
-
-    });
-
-    document.body.appendChild(app.view);
-
-
-
-    PIXI.settings.SCALE_MODE = PIXI.SCALE_MODES.NEAREST;
-
-
-
-    const occupiedPlots = new Map();
-
-    let selectedCell = null;
-
-
-
-    const gridContainer = new PIXI.Container();
-
-    const markerContainer = new PIXI.Container();
-
-    const uiContainer = new PIXI.Container();
-
-    app.stage.addChild(gridContainer, markerContainer, uiContainer);
-
-
-
-    const hoverBox = new PIXI.Graphics();
-
-    hoverBox.lineStyle(2, 0x00ffcc, 1);
-
-    hoverBox.drawRect(0, 0, TILE_SIZE, TILE_SIZE);
-
-    hoverBox.visible = false;
-
-    uiContainer.addChild(hoverBox);
-
-
-
-    const tooltip = new PIXI.Text('', {
-
-      fontFamily: 'monospace',
-
-      fontSize: 14,
-
-      fill: 0xffffff,
-
-      backgroundColor: 0x000000,
-
-      padding: 4
-
-    });
-
-    tooltip.visible = false;
-
-    uiContainer.addChild(tooltip);
-
-
-
-    function createCrossSprite(x, y, epitaph) {
-
-      const g = new PIXI.Graphics();
-
-      
-
-      g.beginFill(0x4a3525);
-
-      g.drawRect(8, 32, 32, 10);
-
-      g.endFill();
-
-
-
-      g.beginFill(0xc2b280);
-
-      g.drawRect(21, 10, 6, 26);
-
-      g.drawRect(14, 16, 20, 6);
-
-      g.endFill();
-
-
-
-      g.beginFill(0xfff4d4);
-
-      g.drawRect(21, 10, 2, 26);
-
-      g.endFill();
-
-
-
-      g.x = x * TILE_SIZE;
-
-      g.y = y * TILE_SIZE;
-
-      g.eventMode = 'static';
-
-      g.cursor = 'help';
-
-
-
-      g.on('pointerover', () => {
-
-        tooltip.text = `"${epitaph}"`;
-
-        tooltip.x = g.x + TILE_SIZE / 2 - tooltip.width / 2;
-
-        tooltip.y = g.y - 24;
-
-        tooltip.visible = true;
-
-      });
-
-      g.on('pointerout', () => {
-
-        tooltip.visible = false;
-
-      });
-
-
-
-      markerContainer.addChild(g);
-
-    }
-
-
-
-    for (let row = 0; row < GRID_ROWS; row++) {
-
-      for (let col = 0; col < GRID_COLS; col++) {
-
-        const tile = new PIXI.Graphics();
+        const app = new PIXI.Application();
 
         
 
-        const isEven = (row + col) % 2 === 0;
+        async function initGame() {
 
-        tile.beginFill(isEven ? 0x243b26 : 0x1f3321);
+            await app.init({ width: WIDTH, height: HEIGHT, backgroundColor: 0x243b22 });
 
-        tile.lineStyle(1, 0x18291a, 0.5);
+            document.getElementById('game-container').appendChild(app.canvas);
 
-        tile.drawRect(0, 0, TILE_SIZE, TILE_SIZE);
 
-        tile.endFill();
 
+            createEnvironment();
 
+            loadGraves();
 
-        tile.x = col * TILE_SIZE;
 
-        tile.y = row * TILE_SIZE;
 
-        tile.eventMode = 'static';
+            app.ticker.add((delta) => {
 
-        tile.cursor = 'pointer';
+                // Анимация или тикер при необходимости
 
+            });
 
+        }
 
-        tile.on('pointerover', () => {
 
-          hoverBox.x = tile.x;
 
-          hoverBox.y = tile.y;
+        initGame();
 
-          hoverBox.visible = true;
 
-          document.getElementById('coords-display').innerText = `Координаты: (${col}, ${row})`;
 
-        });
+        // Слой для графики мира
 
+        const worldLayer = new PIXI.Container();
 
+        app.stage.addChild(worldLayer);
 
-        tile.on('pointerdown', () => {
 
-          const key = `${col},${row}`;
 
-          if (occupiedPlots.has(key)) return;
+        let gravesData = {}; // Хранилище захоронений { "x_y": type }
 
+        let selectedCell = null;
 
 
-          selectedCell = { col, row, key };
 
-          document.getElementById('modal-title').innerText = `Занять участок (${col}, ${row})`;
+        function createEnvironment() {
 
-          document.getElementById('epitaph-input').value = '';
+            // 1. Трава и дорожки
 
-          document.getElementById('modal').style.display = 'block';
+            for (let r = 0; r < ROWS; r++) {
 
-        });
+                for (let c = 0; c < COLS; c++) {
 
+                    const tile = new PIXI.Graphics();
 
+                    let color = (r + c) % 2 === 0 ? 0x2e4a2b : 0x284025;
 
-        gridContainer.addChild(tile);
+                    
 
-      }
+                    // Центральная крестовая дорожка
 
-    }
+                    if (c === Math.floor(COLS/2) || r === Math.floor(ROWS/2)) {
 
+                        color = 0x4d4233; // Цвет каменной дорожки
 
+                    }
 
-    occupiedPlots.set('5,4', 'Покойся с миром');
 
-    createCrossSprite(5, 4, 'Покойся с миром');
 
+                    tile.rect(0, 0, GRID_SIZE, GRID_SIZE);
 
+                    tile.fill(color);
 
-    document.getElementById('confirm-btn').addEventListener('click', () => {
+                    tile.x = c * GRID_SIZE;
 
-      if (!selectedCell) return;
+                    tile.y = r * GRID_SIZE;
 
-      const text = document.getElementById('epitaph-input').value.trim() || 'Забыто.';
+                    worldLayer.addChild(tile);
 
-      
+                }
 
-      occupiedPlots.set(selectedCell.key, text);
+            }
 
-      createCrossSprite(selectedCell.col, selectedCell.row, text);
 
 
+            // 2. Ограда по периметру
 
-      document.getElementById('modal').style.display = 'none';
+            const fenceG = new PIXI.Graphics();
 
-      selectedCell = null;
+            for (let c = 0; c < COLS; c++) {
 
-    });
+                drawFencePart(fenceG, c * GRID_SIZE, 0);
 
+                drawFencePart(fenceG, c * GRID_SIZE, (ROWS - 1) * GRID_SIZE);
 
+            }
 
-    document.getElementById('cancel-btn').addEventListener('click', () => {
+            for (let r = 1; r < ROWS - 1; r++) {
 
-      document.getElementById('modal').style.display = 'none';
+                drawFencePart(fenceG, 0, r * GRID_SIZE);
 
-      selectedCell = null;
+                drawFencePart(fenceG, (COLS - 1) * GRID_SIZE, r * GRID_SIZE);
 
-    });
+            }
 
+            worldLayer.addChild(fenceG);
 
 
-    let tick = 0;
 
-    app.ticker.add((delta) => {
+            // 3. Пиксельные деревья по углам и краям
 
-      tick += 0.05 * delta;
+            drawPixelTree(3, 3);
 
-      hoverBox.alpha = 0.6 + Math.sin(tick) * 0.4;
+            drawPixelTree(COLS - 4, 3);
 
-    });
+            drawPixelTree(3, ROWS - 4);
 
-  </script>
+            drawPixelTree(COLS - 4, ROWS - 4);
 
-</body>
 
-</html>
+
+            // 4. Интерактивная сетка (клик по земле)
+
+            const interactiveLayer = new PIXI.Graphics();
+
+            interactiveLayer.rect(0, 0, WIDTH, HEIGHT);
+
+            interactiveLayer.fill({ color: 0x000000, alpha: 0 });
+
+            interactiveLayer.eventMode = 'static';
+
+            interactiveLayer.cursor = 'pointer';
+
+            
+
+            interactiveLayer.on('pointerdown', (event) => {
+
+                const localPos = event.getLocalPosition(worldLayer);
+
+                const col = Math.floor(localPos.x / GRID_SIZE);
+
+                const row = Math.floor(localPos.y / GRID_SIZE);
+
+
+
+                // Запрещаем ставить на дорожки и забор
+
+                if (col === 0 || col === COLS - 1 || row === 0 || row === ROWS - 1) return;
+
+                if (col === Math.floor(COLS/2) || row === Math.floor(ROWS/2)) return;
+
+
+
+                selectedCell = { col, row };
+
+                document.getElementById('modal').style.display = 'block';
 
