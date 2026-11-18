@@ -62,6 +62,16 @@
 
             overflow: hidden;
 
+            background: #243b22;
+
+        }
+
+        canvas {
+
+            display: block;
+
+            cursor: pointer;
+
         }
 
         /* Модальное окно выбора надгробия */
@@ -156,10 +166,6 @@
 
     </style>
 
-    <!-- Подключаем PixiJS для графики -->
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
-
 </head>
 
 <body>
@@ -169,6 +175,8 @@
     <h1>Cemetery of Love</h1>
 
     <div id="game-container">
+
+        <canvas id="gameCanvas" width="640" height="480"></canvas>
 
         <!-- Модальное окно выбора -->
 
@@ -198,91 +206,75 @@
 
         const ROWS = 15;
 
-        const WIDTH = COLS * GRID_SIZE;
-
-        const HEIGHT = ROWS * GRID_SIZE;
 
 
+        const canvas = document.getElementById('gameCanvas');
 
-        const app = new PIXI.Application();
-
-        
-
-        async function initGame() {
-
-            await app.init({ width: WIDTH, height: HEIGHT, backgroundColor: 0x243b22 });
-
-            document.getElementById('game-container').appendChild(app.canvas);
+        const ctx = canvas.getContext('2d');
 
 
 
-            createEnvironment();
-
-            loadGraves();
-
-
-
-            app.ticker.add((delta) => {
-
-                // Анимация или тикер при необходимости
-
-            });
-
-        }
-
-
-
-        initGame();
-
-
-
-        // Слой для графики мира
-
-        const worldLayer = new PIXI.Container();
-
-        app.stage.addChild(worldLayer);
-
-
-
-        let gravesData = {}; // Хранилище захоронений { "x_y": type }
+        let gravesData = {};
 
         let selectedCell = null;
 
 
 
-        function createEnvironment() {
+        // Загрузка сохраненных могил
 
-            // 1. Трава и дорожки
+        function loadGraves() {
+
+            const saved = localStorage.getItem('cemetery_graves');
+
+            if (saved) {
+
+                try {
+
+                    gravesData = JSON.parse(saved);
+
+                } catch(e) {
+
+                    console.error("Ошибка загрузки", e);
+
+                }
+
+            }
+
+        }
+
+
+
+        function saveGraves() {
+
+            localStorage.setItem('cemetery_graves', JSON.stringify(gravesData));
+
+        }
+
+
+
+        function drawGame() {
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+
+
+            // 1. Рисуем траву и дорожки
 
             for (let r = 0; r < ROWS; r++) {
 
                 for (let c = 0; c < COLS; c++) {
 
-                    const tile = new PIXI.Graphics();
-
-                    let color = (r + c) % 2 === 0 ? 0x2e4a2b : 0x284025;
-
-                    
-
-                    // Центральная крестовая дорожка
+                    let color = (r + c) % 2 === 0 ? '#2e4a2b' : '#284025';
 
                     if (c === Math.floor(COLS/2) || r === Math.floor(ROWS/2)) {
 
-                        color = 0x4d4233; // Цвет каменной дорожки
+                        color = '#4d4233'; // Дорожка
 
                     }
 
+                    ctx.fillStyle = color;
 
-
-                    tile.rect(0, 0, GRID_SIZE, GRID_SIZE);
-
-                    tile.fill(color);
-
-                    tile.x = c * GRID_SIZE;
-
-                    tile.y = r * GRID_SIZE;
-
-                    worldLayer.addChild(tile);
+                    ctx.fillRect(c * GRID_SIZE, r * GRID_SIZE, GRID_SIZE, GRID_SIZE);
 
                 }
 
@@ -290,31 +282,27 @@
 
 
 
-            // 2. Ограда по периметру
-
-            const fenceG = new PIXI.Graphics();
+            // 2. Рисуем забор по периметру
 
             for (let c = 0; c < COLS; c++) {
 
-                drawFencePart(fenceG, c * GRID_SIZE, 0);
+                drawFencePart(c * GRID_SIZE, 0);
 
-                drawFencePart(fenceG, c * GRID_SIZE, (ROWS - 1) * GRID_SIZE);
+                drawFencePart(c * GRID_SIZE, (ROWS - 1) * GRID_SIZE);
 
             }
 
             for (let r = 1; r < ROWS - 1; r++) {
 
-                drawFencePart(fenceG, 0, r * GRID_SIZE);
+                drawFencePart(0, r * GRID_SIZE);
 
-                drawFencePart(fenceG, (COLS - 1) * GRID_SIZE, r * GRID_SIZE);
+                drawFencePart((COLS - 1) * GRID_SIZE, r * GRID_SIZE);
 
             }
 
-            worldLayer.addChild(fenceG);
 
 
-
-            // 3. Пиксельные деревья по углам и краям
+            // 3. Рисуем пиксельные деревья по углам
 
             drawPixelTree(3, 3);
 
@@ -326,39 +314,205 @@
 
 
 
-            // 4. Интерактивная сетка (клик по земле)
+            // 4. Рисуем надгробия
 
-            const interactiveLayer = new PIXI.Graphics();
+            for (const key in gravesData) {
 
-            interactiveLayer.rect(0, 0, WIDTH, HEIGHT);
+                const [c, r] = key.split('_').map(Number);
 
-            interactiveLayer.fill({ color: 0x000000, alpha: 0 });
+                const x = c * GRID_SIZE;
 
-            interactiveLayer.eventMode = 'static';
+                const y = r * GRID_SIZE;
 
-            interactiveLayer.cursor = 'pointer';
+                const type = gravesData[key];
+
+
+
+                // Хохолок земли
+
+                ctx.fillStyle = '#3b2b1e';
+
+                ctx.beginPath();
+
+                ctx.ellipse(x + 16, y + 22, 12, 6, 0, 0, Math.PI * 2);
+
+                ctx.fill();
+
+
+
+                if (type === 'cross') {
+
+                    ctx.fillStyle = '#d3d3d3';
+
+                    ctx.fillRect(x + 14, y + 8, 4, 16);
+
+                    ctx.fillRect(x + 10, y + 12, 12, 4);
+
+                } else if (type === 'slab') {
+
+                    ctx.fillStyle = '#8a95a5';
+
+                    ctx.fillRect(x + 10, y + 6, 12, 18);
+
+                    ctx.fillStyle = '#4a5568';
+
+                    ctx.fillRect(x + 12, y + 10, 8, 10);
+
+                } else if (type === 'urn') {
+
+                    ctx.fillStyle = '#a0522d';
+
+                    ctx.fillRect(x + 11, y + 12, 10, 10);
+
+                    ctx.fillStyle = '#ff0055';
+
+                    ctx.beginPath();
+
+                    ctx.arc(x + 16, y + 9, 5, 0, Math.PI * 2);
+
+                    ctx.fill();
+
+                }
+
+            }
+
+        }
+
+
+
+        function drawFencePart(x, y) {
+
+            ctx.fillStyle = '#5c4033';
+
+            ctx.fillRect(x + 8, y + 8, 16, 16);
+
+            ctx.fillStyle = '#7c5a45';
+
+            ctx.fillRect(x + 12, y + 4, 8, 24);
+
+        }
+
+
+
+        function drawPixelTree(col, row) {
+
+            const tx = col * GRID_SIZE;
+
+            const ty = row * GRID_SIZE;
 
             
 
-            interactiveLayer.on('pointerdown', (event) => {
+            // Ствол
 
-                const localPos = event.getLocalPosition(worldLayer);
+            ctx.fillStyle = '#3d2817';
 
-                const col = Math.floor(localPos.x / GRID_SIZE);
+            ctx.fillRect(tx + 12, ty + 18, 8, 10);
 
-                const row = Math.floor(localPos.y / GRID_SIZE);
+            
+
+            // Крона
+
+            ctx.fillStyle = '#1b3b1a';
+
+            ctx.beginPath();
+
+            ctx.moveTo(tx + 16, ty + 2);
+
+            ctx.lineTo(tx + 28, ty + 18);
+
+            ctx.lineTo(tx + 4, ty + 18);
+
+            ctx.fill();
 
 
 
-                // Запрещаем ставить на дорожки и забор
+            ctx.fillStyle = '#2d5a27';
 
-                if (col === 0 || col === COLS - 1 || row === 0 || row === ROWS - 1) return;
+            ctx.beginPath();
 
-                if (col === Math.floor(COLS/2) || row === Math.floor(ROWS/2)) return;
+            ctx.moveTo(tx + 16, ty + 8);
+
+            ctx.lineTo(tx + 24, ty + 22);
+
+            ctx.lineTo(tx + 8, ty + 22);
+
+            ctx.fill();
+
+        }
 
 
 
-                selectedCell = { col, row };
+        // Клик по холсту для установки надгробия
 
-                document.getElementById('modal').style.display = 'block';
+        canvas.addEventListener('click', (event) => {
+
+            const rect = canvas.getBoundingClientRect();
+
+            const x = event.clientX - rect.left;
+
+            const y = event.clientY - rect.top;
+
+            
+
+            const col = Math.floor(x / GRID_SIZE);
+
+            const row = Math.floor(y / GRID_SIZE);
+
+
+
+            // Запрет ставить на дорожки и забор
+
+            if (col === 0 || col === COLS - 1 || row === 0 || row === ROWS - 1) return;
+
+            if (col === Math.floor(COLS/2) || row === Math.floor(ROWS/2)) return;
+
+
+
+            selectedCell = { col, row };
+
+            document.getElementById('modal').style.display = 'block';
+
+        });
+
+
+
+        function selectTombstone(type) {
+
+            if (!selectedCell) return;
+
+            const key = `${selectedCell.col}_${selectedCell.row}`;
+
+            gravesData[key] = type;
+
+            saveGraves();
+
+            drawGame();
+
+            closeModal();
+
+        }
+
+
+
+        function closeModal() {
+
+            document.getElementById('modal').style.display = 'none';
+
+            selectedCell = null;
+
+        }
+
+
+
+        // Инициализация
+
+        loadGraves();
+
+        drawGame();
+
+    </script>
+
+</body>
+
+</html>
 
