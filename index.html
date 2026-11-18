@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cemetery of Love — Кладбище Любви (Isometric Edition)</title>
+    <title>Cemetery of Love — Кладбище Любви (Funeral Edition)</title>
     <style>
         * {
             box-sizing: border-box;
@@ -152,6 +152,23 @@
             background: #282e45;
             border-color: #ff0055;
         }
+        /* Уведомление о процессе похорон */
+        #funeral-status {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #ff0055;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: #ff77a9;
+            font-weight: bold;
+            letter-spacing: 1px;
+            z-index: 25;
+            box-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -159,6 +176,7 @@
     <h1>Cemetery of Love</h1>
     <div id="game-container">
         <canvas id="isoCanvas" width="1024" height="680"></canvas>
+        <div id="funeral-status">🚗 Катафалк выехал на участок...</div>
 
         <!-- Модалка оформления -->
         <div id="modal" class="modal">
@@ -213,13 +231,10 @@
         const canvas = document.getElementById('isoCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Изометрические параметры сетки
-        const TILE_W = 64; // Ширина ромба тайла
-        const TILE_H = 32; // Высота ромба тайла
+        const TILE_W = 64;
+        const TILE_H = 32;
         const MAP_COLS = 20;
         const MAP_ROWS = 20;
-
-        // Смещение центра карты на холсте
         const ORIGIN_X = canvas.width / 2;
         const ORIGIN_Y = 120;
 
@@ -230,7 +245,15 @@
         let hoverCell = null;
         let animTime = 0;
 
-        // Частицы тумана и листьев
+        // Состояние анимации похорон
+        let funeralAnim = {
+            active: false,
+            stage: 'driving_in', // driving_in, digging, driving_out
+            progress: 0,
+            targetCell: null,
+            pendingData: null
+        };
+
         let fogParticles = [];
         for (let i = 0; i < 15; i++) {
             fogParticles.push({
@@ -253,19 +276,18 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_iso');
+            const saved = localStorage.getItem('cemetery_graves_funeral');
             if (saved) {
                 try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_iso', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_funeral', JSON.stringify(gravesData));
         }
 
         loadGraves();
 
-        // Преобразование сетки (col, row) в экранные координаты (x, y)
         function toScreen(c, r) {
             return {
                 x: ORIGIN_X + (c - r) * (TILE_W / 2),
@@ -273,7 +295,6 @@
             };
         }
 
-        // Обратное преобразование клика мыши в тайл карты
         function getCellFromMouse(screenX, screenY) {
             const rect = canvas.getBoundingClientRect();
             const mx = screenX - rect.left - ORIGIN_X;
@@ -291,11 +312,10 @@
         function isBlocked(c, r) {
             const mid = Math.floor(MAP_COLS / 2);
             if (c === 0 || c === MAP_COLS - 1 || r === 0 || r === MAP_ROWS - 1) return true;
-            if (c === mid || r === mid) return true; // Главные дорожки
+            if (c === mid || r === mid) return true;
             return false;
         }
 
-        // Отрисовка изометрического ромба (тайла земли или дорожки)
         function drawIsoTile(c, r, type) {
             const pt = toScreen(c, r);
             ctx.beginPath();
@@ -313,31 +333,26 @@
                 ctx.fillStyle = (c + r) % 2 === 0 ? '#1b3520' : '#162b1a';
             }
             ctx.fill();
-
             ctx.strokeStyle = type === 'path' ? '#443f3b' : '#102213';
             ctx.lineWidth = 1;
             ctx.stroke();
         }
 
-        // Отрисовка объемного памятника в псевдо-3D
         function drawIsoGrave(c, r, grave) {
             const pt = toScreen(c, r);
             const cx = pt.x;
-            const cy = pt.y + TILE_H / 2; // Центр тайла
+            const cy = pt.y + TILE_H / 2;
 
-            // Тень под холмиком
             ctx.fillStyle = 'rgba(4, 6, 8, 0.5)';
             ctx.beginPath();
             ctx.ellipse(cx, cy + 4, 20, 10, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Земляной холмик
             ctx.fillStyle = '#2d1b18';
             ctx.beginPath();
             ctx.ellipse(cx, cy, 16, 8, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Оградка (если включена)
             if (grave.decor && grave.decor.fence) {
                 ctx.strokeStyle = '#64748b';
                 ctx.lineWidth = 1.5;
@@ -350,7 +365,6 @@
                 ctx.stroke();
             }
 
-            // Цветы (если включены)
             if (grave.decor && grave.decor.flowers) {
                 ctx.fillStyle = '#ec4899';
                 ctx.fillRect(cx - 10, cy - 6, 3, 3);
@@ -358,29 +372,23 @@
                 ctx.fillRect(cx + 8, cy - 4, 3, 3);
             }
 
-            // Сам памятник в зависимости от типа
             if (grave.type === 'cross') {
-                // Каменный крест с объемом
                 ctx.fillStyle = '#64748b';
-                ctx.fillRect(cx - 3, cy - 26, 6, 22); // вертикаль
-                ctx.fillRect(cx - 10, cy - 20, 20, 5);  // горизонталь
-                // Светлая грань
+                ctx.fillRect(cx - 3, cy - 26, 6, 22);
+                ctx.fillRect(cx - 10, cy - 20, 20, 5);
                 ctx.fillStyle = '#94a3b8';
                 ctx.fillRect(cx - 3, cy - 26, 2, 22);
                 ctx.fillRect(cx - 10, cy - 20, 20, 2);
             } else if (grave.type === 'slab') {
-                // Гранитная плита
                 ctx.fillStyle = '#334155';
                 ctx.fillRect(cx - 10, cy - 24, 20, 22);
                 ctx.fillStyle = '#475569';
                 ctx.fillRect(cx - 10, cy - 24, 20, 3);
-                // Сердце / акцент
                 ctx.fillStyle = '#ff0055';
                 ctx.beginPath();
                 ctx.arc(cx, cy - 12, 3, 0, Math.PI * 2);
                 ctx.fill();
             } else if (grave.type === 'urn') {
-                // Вазон с розами
                 ctx.fillStyle = '#78350f';
                 ctx.beginPath();
                 ctx.moveTo(cx - 8, cy - 10);
@@ -389,30 +397,25 @@
                 ctx.lineTo(cx - 6, cy - 2);
                 ctx.closePath();
                 ctx.fill();
-                // Розы
                 ctx.fillStyle = '#ff0055';
                 ctx.fillRect(cx - 4, cy - 16, 4, 4);
                 ctx.fillRect(cx + 1, cy - 15, 4, 4);
             }
         }
 
-        // Объемное изометрическое дерево
         function drawIsoTree(c, r) {
             const pt = toScreen(c, r);
             const cx = pt.x;
             const cy = pt.y + TILE_H / 2;
 
-            // Тень дерева
             ctx.fillStyle = 'rgba(4, 6, 8, 0.6)';
             ctx.beginPath();
             ctx.ellipse(cx, cy + 4, 18, 9, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Ствол
             ctx.fillStyle = '#3e2723';
             ctx.fillRect(cx - 3, cy - 22, 6, 20);
 
-            // Крона (пышный пиксель-арт купол)
             ctx.fillStyle = '#14331b';
             ctx.beginPath();
             ctx.arc(cx, cy - 32, 18, 0, Math.PI * 2);
@@ -423,13 +426,84 @@
             ctx.fill();
         }
 
+        // Отрисовка ретро-катафалка и маленьких человечков при анимации похорон
+        function drawFuneralAnimation() {
+            if (!funeralAnim.active) return;
+
+            funeralAnim.progress += 0.015;
+            const targetPt = toScreen(funeralAnim.targetCell.c, funeralAnim.targetCell.r);
+
+            // Траектория движения катафалка
+            let carX, carY;
+            if (funeralAnim.stage === 'driving_in') {
+                carX = canvas.width * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
+                carY = canvas.height * 0.75 * (1 - funeralAnim.progress) + (targetPt.y + 20) * funeralAnim.progress;
+                document.getElementById('funeral-status').innerText = '🚗 Катафалк прибывает на участок...';
+
+                if (funeralAnim.progress >= 1) {
+                    funeralAnim.progress = 0;
+                    funeralAnim.stage = 'digging';
+                }
+            } else if (funeralAnim.stage === 'digging') {
+                carX = targetPt.x;
+                carY = targetPt.y + 20;
+                document.getElementById('funeral-status').innerText = '⛏️ Проведение ритуала и установка могилы...';
+
+                // Рисуем человечков с лопатами
+                ctx.fillStyle = '#cbd5e1';
+                // Человечек 1
+                ctx.fillRect(targetPt.x - 22, targetPt.y + 10, 6, 12);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath(); ctx.arc(targetPt.x - 19, targetPt.y + 6, 3, 0, Math.PI*2); ctx.fill();
+                // Человечек 2
+                ctx.fillStyle = '#cbd5e1';
+                ctx.fillRect(targetPt.x + 16, targetPt.y + 10, 6, 12);
+                ctx.fillStyle = '#e2e8f0';
+                ctx.beginPath(); ctx.arc(targetPt.x + 19, targetPt.y + 6, 3, 0, Math.PI*2); ctx.fill();
+
+                if (funeralAnim.progress >= 1.2) { // Завершение копки
+                    gravesData[`${funeralAnim.targetCell.c}_${funeralAnim.targetCell.r}`] = funeralAnim.pendingData;
+                    saveGraves();
+                    funeralAnim.progress = 0;
+                    funeralAnim.stage = 'driving_out';
+                }
+            } else if (funeralAnim.stage === 'driving_out') {
+                carX = targetPt.x * (1 - funeralAnim.progress) - 200 * funeralAnim.progress;
+                carY = (targetPt.y + 20) * (1 - funeralAnim.progress) + canvas.height * 0.75 * funeralAnim.progress;
+                document.getElementById('funeral-status').innerText = '🕯️ Вечная память... Катафалк уезжает.';
+
+                if (funeralAnim.progress >= 1) {
+                    funeralAnim.active = false;
+                    document.getElementById('funeral-status').style.display = 'none';
+                }
+            }
+
+            // Отрисовка ретро-катафалка в стиле пиксель-арт / стилизованных примитивов
+            if (funeralAnim.stage !== 'digging' || funeralAnim.progress < 1.2) {
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(carX - 45, carY - 20, 90, 24); // Кузов
+                ctx.fillStyle = '#1f2937';
+                ctx.fillRect(carX - 25, carY - 36, 50, 18); // Кабина
+                // Колеса
+                ctx.fillStyle = '#030712';
+                ctx.beginPath(); ctx.arc(carX - 28, carY + 4, 8, 0, Math.PI*2); ctx.fill();
+                ctx.beginPath(); ctx.arc(carX + 28, carY + 4, 8, 0, Math.PI*2); ctx.fill();
+                // Надпись Press F на борту
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 10px Courier New';
+                ctx.fillText('Press F', carX - 20, carY - 6);
+                // Рождественский/траурный венок на крыше
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(carX - 4, carY - 40, 8, 6);
+            }
+        }
+
         function render(timestamp) {
             animTime = timestamp / 1000;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             const mid = Math.floor(MAP_COLS / 2);
 
-            // 1. Отрисовка тайлов карты (послойно сзади вперед для правильной изометрии)
             for (let r = 0; r < MAP_ROWS; r++) {
                 for (let c = 0; c < MAP_COLS; c++) {
                     if (c === 0 || c === MAP_COLS - 1 || r === 0 || r === MAP_ROWS - 1) {
@@ -442,7 +516,6 @@
                 }
             }
 
-            // 2. Статические декорации (деревья по углам)
             const trees = [
                 [2, 2], [MAP_COLS - 3, 2],
                 [2, MAP_ROWS - 3], [MAP_COLS - 3, MAP_ROWS - 3],
@@ -450,7 +523,6 @@
             ];
             trees.forEach(([tc, tr]) => drawIsoTree(tc, tr));
 
-            // 3. Отрисовка могил (сортируем по сумме координат для идеального наложения)
             const sortedGraves = Object.keys(gravesData).sort((a, b) => {
                 const [ac, ar] = a.split('_').map(Number);
                 const [bc, br] = b.split('_').map(Number);
@@ -464,8 +536,10 @@
                 }
             });
 
-            // 4. Подсветка тайла под курсором
-            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r)) {
+            // Запускаем анимацию катафалка, если идет процесс
+            drawFuneralAnimation();
+
+            if (hoverCell && !isBlocked(hoverCell.c, hoverCell.r) && !funeralAnim.active) {
                 const pt = toScreen(hoverCell.c, hoverCell.r);
                 ctx.beginPath();
                 ctx.moveTo(pt.x, pt.y);
@@ -479,7 +553,6 @@
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Всплывающая подсказка с некрологом при наведении
                 const key = `${hoverCell.c}_${hoverCell.r}`;
                 if (gravesData[key] && gravesData[key].text) {
                     const hx = pt.x;
@@ -496,7 +569,6 @@
                 }
             }
 
-            // 5. Медленный атмосферный туман поверх карты
             fogParticles.forEach(fog => {
                 fog.x += fog.vx;
                 if (fog.x > canvas.width + 100) fog.x = -100;
@@ -514,8 +586,8 @@
             requestAnimationFrame(render);
         }
 
-        // Обработка движения мыши
         canvas.addEventListener('mousemove', (e) => {
+            if (funeralAnim.active) return;
             hoverCell = getCellFromMouse(e.clientX, e.clientY);
             canvas.style.cursor = (hoverCell && isBlocked(hoverCell.c, hoverCell.r)) ? 'default' : 'pointer';
         });
@@ -524,8 +596,8 @@
             hoverCell = null;
         });
 
-        // Обработка клика по участку
         canvas.addEventListener('click', (e) => {
+            if (funeralAnim.active) return;
             const cell = getCellFromMouse(e.clientX, e.clientY);
             if (!cell || isBlocked(cell.c, cell.r)) return;
 
@@ -570,22 +642,32 @@
         }
         function completePayment(method) {
             if (!selectedCell) return;
-            const key = `${selectedCell.col}_${selectedCell.row}`;
-            gravesData[key] = {
+            const text = document.getElementById('epitaphInput').value || 'Вечная память';
+
+            // Запускаем анимацию похорон вместо мгновенной установки
+            funeralAnim.active = true;
+            funeralAnim.stage = 'driving_in';
+            funeralAnim.progress = 0;
+            funeralAnim.targetCell = { c: selectedCell.col, r: selectedCell.row };
+            funeralAnim.pendingData = {
                 type: tempType,
-                text: document.getElementById('epitaphInput').value || 'Вечная память',
+                text: text,
                 decor: { ...tempDecor },
                 payment: method
             };
-            saveGraves();
-            closeModal();
+
+            document.getElementById('payModal').style.display = 'none';
+            document.getElementById('funeral-status').style.display = 'block';
+            selectedCell = null;
         }
+
         function deleteTombstone() {
             if (!selectedCell) return;
             delete gravesData[`${selectedCell.col}_${selectedCell.row}`];
             saveGraves();
             closeModal();
         }
+
         function closeModal() {
             document.getElementById('modal').style.display = 'none';
             document.getElementById('payModal').style.display = 'none';
