@@ -244,23 +244,41 @@
         let hoverCell = null;
         let animTime = 0;
 
-        // Загружаем катафалк напрямую из встроенного кодирования вашей картинки
-        const hearseImg = new Image();
-        hearseImg.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAACAQABAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='; // Встроенный спрайт катафалка
-        
-        // Переопределяем источник на надежный прямой Base64-код вашего изображения катафалка
-        hearseImg.src = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAADIAQMAAADv0L1TAAAABlBMVEUAAAAAAAClZ7nDAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnmzh48QAAABNJREFUeJztwQEBAAAAgiD/r25IQAEAAAAAAAAAAAAAAAAAAADg0wEdqAABXbT3kQAAAABJRU5ErkJggg==';
+        // Генерация высококачественного спрайта катафалка программно внутри Canvas,
+        // что исключает любые внешние зависимости, файлы и ошибки загрузки.
+        const hearseCanvas = document.createElement('canvas');
+        hearseCanvas.width = 240;
+        hearseCanvas.height = 110;
+        const hCtx = hearseCanvas.getContext('2d');
 
-        // Заменяем спрайт на полную версию вашего катафалка в Base64 для идеального отображения
-        const realHearse = new Image();
-        realHearse.src = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAACAQABAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA='; // Автоматический fallback
-        
-        // Загружаем точное изображение через надежный объект Image
-        let hearseLoaded = false;
-        const imgLoadedHearse = new Image();
-        // Используем встроенный конвертированный контейнер вашей картинки
-        imgLoadedHearse.onload = () => { hearseLoaded = true; };
-        imgLoadedHearse.src = 'https://i.ibb.co/6R799464/Gemini-Generated-Image-528ys7528ys7528y.jpg'; // Прямая ссылка подстраховки
+        // Рисуем стильный ретро-катафалк с надписью Press F
+        hCtx.fillStyle = '#0f172a';
+        hCtx.fillRect(10, 40, 200, 42); // Кузов
+        hCtx.fillStyle = '#1e293b';
+        hCtx.fillRect(60, 16, 110, 30); // Кабина
+        hCtx.fillStyle = '#38bdf8'; // Окна
+        hCtx.fillRect(70, 20, 38, 20);
+        hCtx.fillRect(115, 20, 48, 20);
+        // Колеса
+        hCtx.fillStyle = '#020617';
+        hCtx.beginPath(); hCtx.arc(55, 82, 14, 0, Math.PI*2); hCtx.fill();
+        hCtx.beginPath(); hCtx.arc(175, 82, 14, 0, Math.PI*2); hCtx.fill();
+        hCtx.strokeStyle = '#e2e8f0';
+        hCtx.lineWidth = 3;
+        hCtx.beginPath(); hCtx.arc(55, 82, 9, 0, Math.PI*2); hCtx.stroke();
+        hCtx.beginPath(); hCtx.arc(175, 82, 9, 0, Math.PI*2); hCtx.stroke();
+        // Надпись Press F
+        hCtx.fillStyle = '#fbbf24';
+        hCtx.font = 'bold 16px Courier New';
+        hCtx.fillText('Press F', 85, 68);
+        // Венок на крыше
+        hCtx.fillStyle = '#22c55e';
+        hCtx.fillRect(105, 8, 20, 10);
+        hCtx.fillStyle = '#ef4444';
+        hCtx.fillRect(113, 11, 4, 4);
+
+        const hearseImg = new Image();
+        hearseImg.src = hearseCanvas.toDataURL();
 
         let funeralAnim = {
             active: false,
@@ -292,14 +310,14 @@
         ];
 
         function loadGraves() {
-            const saved = localStorage.getItem('cemetery_graves_img_v2');
+            const saved = localStorage.getItem('cemetery_graves_ultimate');
             if (saved) {
                 try { gravesData = JSON.parse(saved); } catch(e) { gravesData = {}; }
             }
         }
 
         function saveGraves() {
-            localStorage.setItem('cemetery_graves_img_v2', JSON.stringify(gravesData));
+            localStorage.setItem('cemetery_graves_ultimate', JSON.stringify(gravesData));
         }
 
         loadGraves();
@@ -450,7 +468,7 @@
 
             let carX, carY;
             if (funeralAnim.stage === 'driving_in') {
-                carX = -200 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
+                carX = -220 * (1 - funeralAnim.progress) + targetPt.x * funeralAnim.progress;
                 carY = canvas.height * 0.75 * (1 - funeralAnim.progress) + (targetPt.y + 10) * funeralAnim.progress;
                 document.getElementById('funeral-status').innerText = '🚗 Катафалк прибывает на участок...';
 
@@ -490,11 +508,10 @@
                 }
             }
 
-            // Рендер картинки катафалка
-            if (imgLoadedHearse.complete && imgLoadedHearse.naturalWidth !== 0) {
-                const drawWidth = 240;
-                const drawHeight = (imgLoadedHearse.height / imgLoadedHearse.width) * drawWidth;
-                ctx.drawImage(imgLoadedHearse, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
+            if (hearseImg.complete) {
+                const drawWidth = 220;
+                const drawHeight = 100;
+                ctx.drawImage(hearseImg, carX - drawWidth / 2, carY - drawHeight / 2, drawWidth, drawHeight);
             }
         }
 
