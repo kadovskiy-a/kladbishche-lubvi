@@ -1847,6 +1847,14 @@
                     },
                     () => {
                         applyFallbackByIpOrClock();
+                    },
+                    { timeout: 6000 }
+                );
+            } else {
+                applyFallbackByIpOrClock();
+            }
+        }
+
         function saveCemeteryToLocalStorage(skipCloud = false) {
             try {
                 const bannerHidden = !document.getElementById('instruction-banner');
@@ -2220,6 +2228,13 @@
                     if (gridMap[x][y].object && gridMap[x][y].object.cat === 'graves') {
                         gridMap[x][y].object = null;
                     }
+                }
+            }
+            saveCemeteryToLocalStorage();
+            renderAdminGravesList();
+            showToast('Все захоронения очищены.', 'amber');
+        };
+
         document.getElementById('btn-admin-reset-all').onclick = async () => {
             localStorage.removeItem(STORAGE_KEY_MAP);
             if (cloudSync.enabled && cloudSync.user && cloudSync.deleteDoc) {
