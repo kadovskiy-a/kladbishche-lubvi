@@ -156,6 +156,9 @@
                 </h1>
                 <div class="flex items-center gap-2 text-xs text-stone-400 font-mono">
                     <span id="user-badge" class="px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-stone-300">Гость</span>
+                    <span id="cloud-sync-badge" class="px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-stone-400 flex items-center gap-1" title="Синхронизация карты кладбища">
+                        <i class="fa-solid fa-cloud text-stone-500"></i> <span>Локально</span>
+                    </span>
                 </div>
             </div>
         </div>
@@ -1631,6 +1634,66 @@
         // 5.5 MODALS: BURIAL ORDER, YOOKASSA, MEMORIAL & ADMIN HANDLERS
         // ===================================================================
         const STORAGE_KEY_MAP = 'ex_love_cemetery_map_v1';
+        let cloudSync = {
+            enabled: false,
+            user: null,
+            db: null,
+            docRef: null,
+            saveDoc: null,
+            deleteDoc: null,
+            isApplyingRemote: false
+        };
+
+        function updateCloudSyncBadge(text, colorClass) {
+            const badge = document.getElementById('cloud-sync-badge');
+            if (!badge) return;
+            badge.className = `px-2 py-0.5 rounded bg-stone-900 border text-[11px] flex items-center gap-1 ${colorClass}`;
+            badge.innerHTML = `<i class="fa-solid fa-cloud"></i> <span>${text}</span>`;
+        }
+
+        function serializeCemeteryCells() {
+            const cells = {};
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const cell = gridMap[x][y];
+                    cells[`${x}_${y}`] = {
+                        tile: cell.tile,
+                        object: cell.object ? { ...cell.object } : null
+                    };
+                }
+            }
+            return cells;
+        }
+
+        function applySerializedCells(cellsObj) {
+            if (!cellsObj || typeof cellsObj !== 'object') return;
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const savedCell = cellsObj[`${x}_${y}`];
+                    if (savedCell && typeof savedCell.tile === 'number') {
+                        gridMap[x][y].tile = savedCell.tile;
+                        gridMap[x][y].object = savedCell.object ? { ...savedCell.object } : null;
+                    }
+                }
+            }
+            if (!document.getElementById('admin-modal')?.classList.contains('hidden')) {
+                renderAdminGravesList();
+            }
+            if (activeMemorialTile && activeMemorialTile.object && !document.getElementById('memorial-modal')?.classList.contains('hidden')) {
+                openMemorialModal(activeMemorialTile.object);
+            }
+        }
+
+        window.applyRemoteCemeterySnapshot = function (remoteData) {
+            if (!remoteData || !remoteData.cells) return;
+            cloudSync.isApplyingRemote = true;
+            try {
+                applySerializedCells(remoteData.cells);
+                saveCemeteryToLocalStorage(true);
+            } finally {
+                cloudSync.isApplyingRemote = false;
+            }
+        };
 
         function showToast(message, color = 'stone') {
             const container = document.getElementById('toast-container');
@@ -1784,15 +1847,7 @@
                     },
                     () => {
                         applyFallbackByIpOrClock();
-                    },
-                    { timeout: 6000, maximumAge: 600000 }
-                );
-            } else {
-                await applyFallbackByIpOrClock();
-            }
-        }
-
-        function saveCemeteryToLocalStorage() {
+        function saveCemeteryToLocalStorage(skipCloud = false) {
             try {
                 const bannerHidden = !document.getElementById('instruction-banner');
                 const serialized = gridMap.map(col =>
@@ -1812,6 +1867,14 @@
                         zoom: camera.zoom
                     }
                 }));
+
+                if (!skipCloud && !cloudSync.isApplyingRemote && cloudSync.enabled && cloudSync.user && cloudSync.saveDoc) {
+                    cloudSync.saveDoc({
+                        cells: serializeCemeteryCells(),
+                        updatedAt: Date.now(),
+                        updatedBy: currentUser ? currentUser.username : 'guest'
+                    }).catch(err => console.warn('Ошибка синхронизации с облаком:', err));
+                }
             } catch (err) {
                 console.warn('Не удалось сохранить состояние кладбища:', err);
             }
@@ -1857,9 +1920,9 @@
             }
         }
 
-        // Периодически фиксируем позицию камеры и масштаб, если они менялись
+        // Периодически фиксируем позицию камеры и масштаб локально, если они менялись
         setInterval(() => {
-            saveCemeteryToLocalStorage();
+            saveCemeteryToLocalStorage(true);
         }, 5000);
 
         function renderAdminGravesList() {
@@ -2157,15 +2220,15 @@
                     if (gridMap[x][y].object && gridMap[x][y].object.cat === 'graves') {
                         gridMap[x][y].object = null;
                     }
+        document.getElementById('btn-admin-reset-all').onclick = async () => {
+            localStorage.removeItem(STORAGE_KEY_MAP);
+            if (cloudSync.enabled && cloudSync.user && cloudSync.deleteDoc) {
+                try {
+                    await cloudSync.deleteDoc();
+                } catch (err) {
+                    console.warn('Не удалось очистить облачное сохранение:', err);
                 }
             }
-            saveCemeteryToLocalStorage();
-            renderAdminGravesList();
-            showToast('Все захоронения очищены.', 'amber');
-        };
-
-        document.getElementById('btn-admin-reset-all').onclick = () => {
-            localStorage.removeItem(STORAGE_KEY_MAP);
             showToast('Сохранение сброшено. Перезагрузка страницы...', 'amber');
             setTimeout(() => {
                 window.location.reload();
@@ -2491,6 +2554,90 @@
 
             render();
         };
+    </script>
+
+    <!-- SHARED CLOUD STORAGE (FIRESTORE) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        async function initSharedCloudStorage() {
+            try {
+                if (typeof __firebase_config === 'undefined' || !__firebase_config) {
+                    updateCloudSyncBadge('Локально', 'border-stone-700 text-stone-400');
+                    return;
+                }
+
+                const firebaseConfig = typeof __firebase_config === 'string'
+                    ? JSON.parse(__firebase_config)
+                    : __firebase_config;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                const db = getFirestore(app);
+
+                // RULE 3: Authenticate BEFORE any Firestore queries
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                const user = auth.currentUser;
+                if (!user) return;
+
+                // RULE 1: Strict public shared path so admin & all users see each other's changes
+                const sharedMapDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'cemetery_state', 'main_map');
+
+                cloudSync.enabled = true;
+                cloudSync.user = user;
+                cloudSync.db = db;
+                cloudSync.docRef = sharedMapDocRef;
+                cloudSync.saveDoc = async (payload) => {
+                    if (!auth.currentUser) return;
+                    await setDoc(sharedMapDocRef, payload);
+                };
+                cloudSync.deleteDoc = async () => {
+                    if (!auth.currentUser) return;
+                    await deleteDoc(sharedMapDocRef);
+                };
+
+                // Initial fetch of shared state
+                const snap = await getDoc(sharedMapDocRef);
+                if (snap.exists()) {
+                    window.applyRemoteCemeterySnapshot(snap.data());
+                } else {
+                    // Seed initial state if cloud is empty
+                    await cloudSync.saveDoc({
+                        cells: serializeCemeteryCells(),
+                        updatedAt: Date.now(),
+                        updatedBy: 'system_init'
+                    });
+                }
+
+                // Real-time listener for changes made by any user or admin
+                onSnapshot(
+                    sharedMapDocRef,
+                    (docSnap) => {
+                        if (docSnap.exists()) {
+                            window.applyRemoteCemeterySnapshot(docSnap.data());
+                        }
+                        updateCloudSyncBadge('Облако: синхр.', 'border-emerald-700 text-emerald-300');
+                    },
+                    (error) => {
+                        console.warn('Ошибка подписки на облачное состояние:', error);
+                        updateCloudSyncBadge('Локально', 'border-amber-700 text-amber-300');
+                    }
+                );
+            } catch (err) {
+                console.warn('Облачное хранилище недоступно, используется localStorage:', err);
+                updateCloudSyncBadge('Локально', 'border-stone-700 text-stone-400');
+            }
+        }
+
+        initSharedCloudStorage();
     </script>
 </body>
 </html>
