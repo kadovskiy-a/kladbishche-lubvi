@@ -1,713 +1,2321 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" class="dark h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кладбище любви</title>
+    <title>Кладбище Бывшей Любви — Изометрический Пиксель-Арт</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            background-color: #0b0b16;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
+            font-family: 'VT323', monospace;
+            background-color: #06070a;
+            color: #c2c7d0;
+            user-select: none;
             overflow: hidden;
+        }
+        .font-gothic { font-family: 'Cinzel', serif; }
+        .font-pixel { font-family: 'Press Start 2P', cursive; }
+        canvas {
             image-rendering: pixelated;
             image-rendering: crisp-edges;
+            -ms-interpolation-mode: nearest-neighbor;
         }
-        #game-container {
-            width: 100vw;
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        .pixel-card {
+            background: rgba(14, 16, 22, 0.96);
+            border: 2px solid #542735;
+            box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.95), 0 0 25px rgba(160, 30, 60, 0.2);
         }
-        .modal-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.85);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
+        .pixel-btn {
+            transition: all 0.12s ease;
+            box-shadow: inset -2px -2px 0 0 #12141a, inset 2px 2px 0 0 #5a6378;
         }
-        .form-box {
-            background: #16192b;
-            border: 2px solid #ff4d4d;
-            padding: 25px;
-            width: 380px;
-            border-radius: 8px;
-            box-shadow: 0 0 25px rgba(255, 77, 77, 0.4);
+        .pixel-btn:hover {
+            filter: brightness(1.2);
+            transform: translateY(-1px);
         }
-        .form-box h2 {
-            margin-top: 0;
-            color: #ff4d4d;
-            text-align: center;
-            font-size: 22px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+        .pixel-btn:active {
+            transform: translateY(1px);
+            box-shadow: inset 2px 2px 0 0 #12141a, inset -2px -2px 0 0 #5a6378;
         }
-        .form-group {
-            margin-bottom: 15px;
+        .yookassa-header {
+            background: linear-gradient(135deg, #0070f3 0%, #004499 100%);
         }
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-            color: #b3b9d1;
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0c0e12; }
+        ::-webkit-scrollbar-thumb { background: #542735; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #883449; }
+        @keyframes pulse-heart {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
         }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 8px;
-            background: #0f111a;
-            border: 1px solid #2e3248;
-            color: #fff;
-            font-family: 'Courier New', Courier, monospace;
-            box-sizing: border-box;
-            border-radius: 4px;
-        }
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-            gap: 10px;
-        }
-        .btn-submit {
-            background: #ff4d4d;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-weight: bold;
-            border-radius: 4px;
-            width: 100%;
-            text-transform: uppercase;
-        }
-        .btn-submit:hover { background: #ff3333; }
-        .btn-cancel {
-            background: #4a506d;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            cursor: pointer;
-            border-radius: 4px;
-            width: 100%;
-        }
-        .btn-cancel:hover { background: #5a6285; }
-        .toggle-link {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 13px;
-            color: #61afef;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .btn-gen {
-            background: #2e3248;
-            border: none;
-            color: #fff;
-            padding: 8px;
-            cursor: pointer;
-            border-radius: 4px;
-            font-size: 12px;
-            margin-top: 5px;
-            width: 100%;
-        }
-        .btn-gen:hover { background: #3e4463; }
+        .animate-heart { animation: pulse-heart 2s infinite ease-in-out; }
     </style>
-    <!-- Phaser 3 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
-    <!-- Supabase CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div id="game-container"></div>
+<body class="h-full w-full relative flex flex-col justify-between overflow-hidden text-stone-300">
 
-    <!-- Модальное окно Авторизации -->
-    <div id="auth-modal-overlay" class="modal-overlay">
-        <div class="form-box">
-            <h2 id="auth-title">Вход на кладбище</h2>
-            <form id="authForm">
-                <div class="form-group" id="nameGroup" style="display: none;">
-                    <label>Имя персонажа:</label>
-                    <input type="text" id="usernameInput" placeholder="Ваше имя">
-                </div>
-                <div class="form-group">
-                    <label>Электронная почта / Логин:</label>
-                    <input type="text" id="emailInput" placeholder="admin или mail@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label>Пароль:</label>
-                    <input type="password" id="passwordInput" placeholder="admin или пароль" required>
-                </div>
-                <button type="submit" class="btn-submit" id="authSubmitBtn">Войти</button>
-                <div class="toggle-link" id="toggleAuthMode">Нет аккаунта? Зарегистрироваться</div>
-                <button type="button" class="btn-cancel" id="closeAuthModal">Назад в меню</button>
-            </form>
+    <!-- CANVAS VIEWPORT -->
+    <div id="viewport-container" class="absolute inset-0 w-full h-full bg-stone-950 cursor-grab active:cursor-grabbing">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+    </div>
+
+    <!-- START LANDING OVERLAY (Auth Gate) -->
+    <div id="start-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 transition-all duration-500">
+        <div class="pixel-card max-w-lg w-full p-8 rounded-xl text-center flex flex-col items-center gap-6 border-2 border-rose-900/80 shadow-2xl">
+            <div class="w-16 h-16 rounded-full bg-rose-950 border-2 border-rose-600 flex items-center justify-center text-rose-500 text-3xl shadow-lg">
+                <i class="fa-solid fa-heart-crack animate-heart"></i>
+            </div>
+            <div>
+                <h1 class="font-gothic text-3xl md:text-4xl font-bold tracking-widest text-rose-100 drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
+                    КЛАДБИЩЕ БЫВШЕЙ ЛЮБВИ
+                </h1>
+                <p class="text-stone-400 text-sm mt-2 font-mono">
+                    Мемориальный комплекс незавершенных историй, несказанных слов и разбитых сердец
+                </p>
+            </div>
+            
+            <div class="flex flex-col w-full gap-3">
+                <button id="btn-open-auth" class="pixel-btn bg-rose-900 hover:bg-rose-800 text-rose-100 font-bold py-3.5 px-6 rounded-lg text-lg flex items-center justify-center gap-3 border border-rose-600 shadow-xl">
+                    <i class="fa-solid fa-right-to-bracket"></i> ВХОД / РЕГИСТРАЦИЯ
+                </button>
+                <button id="btn-quick-admin-start" class="pixel-btn bg-amber-950 hover:bg-amber-900 text-amber-200 py-2.5 px-4 rounded-lg text-xs font-mono flex items-center justify-center gap-2 border border-amber-700">
+                    <i class="fa-solid fa-user-shield text-amber-400"></i> Быстрый вход: Admin (Тестовый доступ)
+                </button>
+            </div>
+
+            <span class="text-[11px] text-stone-500 font-mono">16/32-битный изометрический интерактивный некрополь</span>
         </div>
     </div>
 
-    <!-- Модальное окно создания могилы -->
-    <div id="grave-form-overlay" class="modal-overlay">
-        <div class="form-box">
-            <h2>Оформление мемориала</h2>
-            <form id="graveForm">
-                <div class="form-group">
-                    <label>Тип памятника:</label>
-                    <select id="tombstoneType">
-                        <option value="0">1. Готическая стела с крестом</option>
-                        <option value="1">2. Округлый мемориальный камень</option>
-                        <option value="2">3. Прямоугольная плита</option>
-                    </select>
+    <!-- AUTH MODAL (Login / Register) -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden pointer-events-auto">
+        <div class="pixel-card max-w-md w-full rounded-xl p-6 relative flex flex-col gap-4 text-stone-200 border-2 border-rose-900">
+            <button id="close-auth-btn" class="absolute top-3 right-3 text-stone-400 hover:text-stone-100 text-xl"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-stone-800 pb-2 gap-2 text-sm">
+                <button id="tab-login" class="flex-1 py-1.5 font-bold text-rose-400 border-b-2 border-rose-600">Вход</button>
+                <button id="tab-register" class="flex-1 py-1.5 font-bold text-stone-500 border-b-2 border-transparent hover:text-stone-300">Регистрация</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="form-login" class="flex flex-col gap-3">
+                <div>
+                    <label class="block text-xs font-mono text-stone-400 mb-1">Логин / Email</label>
+                    <input type="text" id="login-username" value="admin" placeholder="admin" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 focus:outline-none focus:border-rose-600 text-sm font-mono">
                 </div>
-                <div class="form-group">
-                    <label>Инициалы (строго 2 буквы):</label>
-                    <input type="text" id="initialsInput" maxlength="2" placeholder="АК" required>
+                <div>
+                    <label class="block text-xs font-mono text-stone-400 mb-1">Пароль (для admin — оставьте пустым)</label>
+                    <input type="password" id="login-password" placeholder="••••••••" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 focus:outline-none focus:border-rose-600 text-sm font-mono">
                 </div>
-                <div class="form-group">
-                    <label>Эпитафия:</label>
-                    <input type="text" id="epitaphInput" placeholder="Сгорел ярче всех...">
-                    <button type="button" class="btn-gen" id="randomEpitaphBtn">Сгенерировать случайную</button>
-                </div>
-                <div style="font-size: 13px; color: #ffcc00; margin-bottom: 10px; text-align: center;">
-                    Установка мемориала: 99.99 руб.
-                </div>
-                <div class="form-actions">
-                    <button type="button" class="btn-cancel" id="cancelGraveBtn">Отмена</button>
-                    <button type="submit" class="btn-submit">Установить</button>
-                </div>
+                <button type="submit" class="pixel-btn bg-rose-900 hover:bg-rose-800 text-rose-100 font-bold py-2.5 rounded text-sm mt-1 border border-rose-600">
+                    Войти в аккаунт
+                </button>
             </form>
+
+            <!-- Register Form (Hidden by default) -->
+            <form id="form-register" class="flex flex-col gap-3 hidden">
+                <div>
+                    <label class="block text-xs font-mono text-stone-400 mb-1">Имя или Псевдоним</label>
+                    <input type="text" id="reg-username" placeholder="Алексей" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 focus:outline-none focus:border-rose-600 text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-mono text-stone-400 mb-1">Email / Телефон</label>
+                    <input type="text" id="reg-email" placeholder="user@example.com" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 focus:outline-none focus:border-rose-600 text-sm font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-mono text-stone-400 mb-1">Придумайте Пароль</label>
+                    <input type="password" id="reg-password" placeholder="••••••••" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 focus:outline-none focus:border-rose-600 text-sm font-mono">
+                </div>
+                <button type="submit" class="pixel-btn bg-emerald-900 hover:bg-emerald-800 text-emerald-100 font-bold py-2.5 rounded text-sm mt-1 border border-emerald-600">
+                    Создать аккаунт
+                </button>
+            </form>
+
+            <div class="border-t border-stone-800 pt-3 flex justify-between items-center text-xs text-stone-400 font-mono">
+                <span>Тестовый аккаунт:</span>
+                <button type="button" id="btn-fill-admin" class="text-amber-400 hover:underline">Логин: admin / без пароля</button>
+            </div>
         </div>
     </div>
 
+    <!-- HEADER / HUD OVERLAY -->
+    <header class="relative z-10 p-3 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-b from-black/95 via-stone-950/80 to-transparent pointer-events-auto">
+        <div class="flex items-center gap-3">
+            <div class="w-11 h-11 bg-rose-950/80 border-2 border-rose-800/80 rounded flex items-center justify-center text-rose-500 text-xl shadow-lg">
+                <i class="fa-solid fa-heart-crack animate-heart"></i>
+            </div>
+            <div>
+                <h1 class="font-gothic text-xl md:text-2xl font-bold tracking-widest text-rose-100 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)] flex items-center gap-2">
+                    КЛАДБИЩЕ БЫВШЕЙ ЛЮБВИ
+                </h1>
+                <div class="flex items-center gap-2 text-xs text-stone-400 font-mono">
+                    <span id="user-badge" class="px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-stone-300">Гость</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- BALANCE & HUD CONTROLS -->
+        <div class="flex items-center gap-2 flex-wrap text-sm">
+            <!-- Balance Display -->
+            <div class="bg-stone-900/90 border border-rose-900/60 rounded px-3 py-1 flex items-center gap-2 shadow-inner">
+                <i class="fa-solid fa-coins text-amber-400"></i>
+                <span class="text-xs font-mono text-stone-300">Баланс:</span>
+                <span id="user-balance" class="font-bold text-amber-400 font-mono text-sm">15 000 ₽</span>
+            </div>
+
+            <!-- Admin Dashboard Toggle (visible for admin) -->
+            <button id="btn-admin-panel" class="pixel-btn bg-amber-950 hover:bg-amber-900 text-amber-200 border border-amber-700 px-3 py-1.5 rounded text-xs hidden">
+                <i class="fa-solid fa-user-shield text-amber-400 mr-1"></i> Админ-панель
+            </button>
+
+            <!-- Location Weather & Time Indicator (visible for all users) -->
+            <div id="weather-badge" class="bg-stone-900/90 border border-stone-700 rounded px-3 py-1 flex items-center gap-2 text-xs font-mono text-stone-300" title="Время и погода синхронизируются с вашим устройством и местоположением">
+                <i id="weather-icon" class="fa-solid fa-cloud-sun text-amber-300"></i>
+                <span id="weather-status">Погода: локация...</span>
+                <span class="text-stone-600">|</span>
+                <i class="fa-regular fa-clock text-rose-400"></i>
+                <span id="clock-status" class="text-rose-200 font-bold">--:--:--</span>
+            </div>
+
+            <!-- Audio Toggle -->
+            <button id="audio-toggle" class="pixel-btn bg-stone-800 hover:bg-stone-700 text-rose-400 border border-stone-600 px-3 py-1.5 rounded flex items-center gap-2 text-xs">
+                <i id="audio-icon" class="fa-solid fa-volume-xmark text-red-400"></i>
+                <span id="audio-text">Звук</span>
+            </button>
+
+            <!-- Logout Button (Top Right) -->
+            <button id="btn-logout" class="pixel-btn bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-800 px-3 py-1.5 rounded flex items-center gap-1.5 text-xs hidden" title="Выйти из аккаунта">
+                <i class="fa-solid fa-right-from-bracket text-rose-400"></i>
+                <span>Выйти</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- INSTRUCTION BANNER -->
+    <div id="instruction-banner" class="relative z-10 self-center my-1 bg-stone-900/90 border border-rose-900/50 text-stone-300 px-4 py-2 rounded-full text-xs flex items-center gap-3 backdrop-blur shadow-2xl transition-opacity duration-500">
+        <span><i class="fa-solid fa-crosshairs text-rose-400 mr-1"></i> <b>Двойной клик ЛКМ по свободной клетке</b> — оформить выезд процессии с гробом и похоронить бывшую любовь.</span>
+        <span><i class="fa-solid fa-warehouse text-amber-400 mr-1"></i> <b>Гараж / Часовня</b> расположен в начале центральной аллеи.</span>
+        <button onclick="document.getElementById('instruction-banner').remove()" class="text-stone-400 hover:text-stone-100 ml-2"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="fixed top-20 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- EDITOR TOOLBAR PANEL -->
+    <div id="editor-panel" class="relative z-10 hidden flex-col self-center bg-stone-900/95 border-2 border-stone-700 rounded-xl p-3 shadow-2xl backdrop-blur-md max-w-4xl w-[95%] mb-2 pointer-events-auto transition-all">
+        <div class="flex items-center justify-between border-b border-stone-700 pb-2 mb-2">
+            <div class="flex items-center gap-2 font-bold text-rose-400 text-sm">
+                <i class="fa-solid fa-boxes-packing"></i> ПАЛИТРА СТРОИТЕЛЬСТВА
+            </div>
+            <div class="flex gap-1 text-xs">
+                <button data-cat="tiles" class="editor-tab px-3 py-1 rounded bg-rose-950 text-rose-200 border border-rose-800">Земля / Аллея (50)</button>
+                <button data-cat="graves" class="editor-tab px-3 py-1 rounded bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-700">Надгробия (20)</button>
+                <button data-cat="trees" class="editor-tab px-3 py-1 rounded bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-700">Деревья / Ивы (20)</button>
+                <button data-cat="fences" class="editor-tab px-3 py-1 rounded bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-700">Ограды / Фонари (20)</button>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="tool-paint" class="tool-btn active px-2.5 py-1 text-xs rounded bg-stone-700 text-stone-100 border border-stone-500" title="Кисть"><i class="fa-solid fa-paint-brush"></i></button>
+                <button id="tool-erase" class="tool-btn px-2.5 py-1 text-xs rounded bg-stone-800 text-red-400 hover:bg-red-950 border border-stone-700" title="Ластик"><i class="fa-solid fa-eraser"></i></button>
+            </div>
+        </div>
+        <div id="palette-container" class="flex gap-2 overflow-x-auto py-2 px-1 max-h-24 items-center border border-stone-800 rounded bg-stone-950/80"></div>
+    </div>
+
+    <!-- BURIAL ORDER FORM MODAL (Буквы пары А + Б & Выбор надгробия) -->
+    <div id="burial-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden pointer-events-auto">
+        <div class="pixel-card max-w-xl w-full rounded-xl p-6 relative flex flex-col gap-4 text-stone-200 border-2 border-rose-900 shadow-2xl">
+            <button id="close-burial-btn" class="absolute top-3 right-3 text-stone-400 hover:text-stone-100 text-xl"><i class="fa-solid fa-xmark"></i></button>
+
+            <div class="border-b border-rose-900/60 pb-3 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-rose-950 border border-rose-700 flex items-center justify-center text-rose-400 text-xl">
+                    <i class="fa-solid fa-tombstone"></i>
+                </div>
+                <div>
+                    <h2 class="font-gothic text-xl font-bold text-rose-100">ЗАХОРОНЕНИЕ БЫВШЕЙ ЛЮБВИ</h2>
+                    <p class="text-xs text-stone-400">Укажите буквы пары, выберите надгробие и перейдите к оплате</p>
+                </div>
+            </div>
+
+            <div class="space-y-4 text-xs">
+                <!-- Initials Input (A + B) -->
+                <div>
+                    <label class="block text-stone-300 font-bold mb-1">Инициалы пара (Буквы на памятнике):</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="initial-1" maxlength="12" value="А" placeholder="А" class="w-1/2 bg-stone-950 border border-stone-700 rounded p-2 text-center text-rose-300 font-bold text-base focus:border-rose-600 focus:outline-none">
+                        <span class="text-rose-500 font-bold text-lg">+</span>
+                        <input type="text" id="initial-2" maxlength="12" value="Б" placeholder="Б" class="w-1/2 bg-stone-950 border border-stone-700 rounded p-2 text-center text-rose-300 font-bold text-base focus:border-rose-600 focus:outline-none">
+                    </div>
+                    <!-- Preset Chips -->
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <span class="text-[10px] text-stone-500 self-center">Быстрые пресеты:</span>
+                        <button class="pair-preset px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-rose-300 hover:bg-rose-950" data-p1="А" data-p2="Б">А + Б</button>
+                        <button class="pair-preset px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-rose-300 hover:bg-rose-950" data-p1="Б" data-p2="В">Б + В</button>
+                        <button class="pair-preset px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-rose-300 hover:bg-rose-950" data-p1="М" data-p2="Ж">М + Ж</button>
+                        <button class="pair-preset px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-rose-300 hover:bg-rose-950" data-p1="Е" data-p2="Д">Е + Д</button>
+                        <button class="pair-preset px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-rose-300 hover:bg-rose-950" data-p1="К" data-p2="М">К + М</button>
+                    </div>
+                </div>
+
+                <!-- Tombstone Selector (20 Items) -->
+                <div>
+                    <label class="block text-stone-300 font-bold mb-1">Выбор памятника (из 20 видов):</label>
+                    <div id="burial-tombstone-grid" class="grid grid-cols-4 sm:grid-cols-5 gap-2 max-h-36 overflow-y-auto p-2 bg-stone-950 border border-stone-800 rounded">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Epitaph Generator -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-stone-300 font-bold">Прощальная эпитафия:</label>
+                        <button id="btn-generate-epitaph" class="text-rose-400 hover:text-rose-300 text-[11px] flex items-center gap-1 underline">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Сгенерировать
+                        </button>
+                    </div>
+                    <textarea id="burial-epitaph-input" rows="2" placeholder="Напишите пару слов..." class="w-full bg-stone-950 border border-stone-700 rounded p-2 text-stone-200 focus:outline-none focus:border-rose-600 resize-none font-gothic italic text-sm"></textarea>
+                </div>
+            </div>
+
+            <div class="border-t border-stone-800 pt-3 flex items-center justify-between">
+                <div>
+                    <span class="text-xs text-stone-400 block">Стоимость захоронения:</span>
+                    <span id="burial-total-price" class="text-amber-400 font-mono text-xl font-bold">1 500 ₽</span>
+                </div>
+                <button id="btn-proceed-to-payment" class="pixel-btn bg-rose-900 hover:bg-rose-800 text-rose-100 border border-rose-600 px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2">
+                    ПЕРЕЙТИ К ОПЛАТЕ <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- YOOKASSA PAYMENT WIDGET MODAL -->
+    <div id="yookassa-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md hidden pointer-events-auto">
+        <div class="max-w-md w-full bg-stone-900 rounded-xl overflow-hidden shadow-2xl border border-stone-700 text-stone-200">
+            <!-- YooKassa Styled Header -->
+            <div class="yookassa-header p-4 flex items-center justify-between text-white">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-white text-blue-600 font-bold flex items-center justify-center text-xs">Ю</div>
+                    <span class="font-bold text-base tracking-wide">ЮKassa / Касса</span>
+                </div>
+                <button id="close-yookassa-btn" class="text-white/80 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Order Info Bar -->
+            <div class="bg-stone-950 px-4 py-3 border-b border-stone-800 flex justify-between items-center text-xs">
+                <div>
+                    <span class="text-stone-400 block">Заказ захоронения:</span>
+                    <span id="yk-order-title" class="font-bold text-rose-400 text-sm">Пара «А + Б»</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-stone-400 block">К оплате:</span>
+                    <span id="yk-order-amount" class="font-mono text-amber-400 font-bold text-base">1 500 ₽</span>
+                </div>
+            </div>
+
+            <!-- Tabs: Card vs SBP -->
+            <div class="p-4 space-y-4">
+                <div class="flex border-b border-stone-800 pb-2 gap-2 text-xs">
+                    <button id="yk-tab-card" class="flex-1 py-2 rounded font-bold bg-stone-800 text-white border border-stone-600 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-credit-card text-blue-400"></i> Банковская карта
+                    </button>
+                    <button id="yk-tab-sbp" class="flex-1 py-2 rounded font-bold bg-stone-950 text-stone-400 hover:text-white flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-qrcode text-emerald-400"></i> СБП (QR-код)
+                    </button>
+                </div>
+
+                <!-- Card Form -->
+                <form id="yk-form-card" class="space-y-3 text-xs">
+                    <div>
+                        <label class="block text-stone-400 mb-1">Номер карты</label>
+                        <input type="text" id="yk-card-number" value="4200 0000 0000 4242" placeholder="0000 0000 0000 0000" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 font-mono focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-stone-400 mb-1">Срок действия</label>
+                            <input type="text" id="yk-card-exp" value="12/28" placeholder="ММ/ГГ" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 font-mono focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-stone-400 mb-1">CVC / CVV</label>
+                            <input type="password" id="yk-card-cvc" value="777" placeholder="***" maxlength="4" class="w-full bg-stone-950 border border-stone-700 rounded p-2.5 text-stone-100 font-mono focus:outline-none focus:border-blue-500">
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-pay-card" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg text-sm shadow-lg flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-lock text-xs"></i> ОПЛАТИТЬ ЧЕРЕЗ ЮKASSA
+                    </button>
+                </form>
+
+                <!-- SBP View (Hidden by default) -->
+                <div id="yk-view-sbp" class="hidden flex-col items-center gap-3 py-2 text-center text-xs">
+                    <div class="w-36 h-36 bg-white p-2 rounded-lg shadow flex items-center justify-center">
+                        <!-- Mock QR Code -->
+                        <svg class="w-full h-full text-black" viewBox="0 0 100 100">
+                            <path fill="currentColor" d="M0,0 h30 v30 h-30 z M10,10 h10 v10 h-10 z M70,0 h30 v30 h-30 z M80,10 h10 v10 h-10 z M0,70 h30 v30 h-30 z M10,80 h10 v10 h-10 z M40,10 h20 v10 h-20 z M40,40 h20 v20 h-20 z M10,40 h20 v20 h-20 z M70,40 h20 v20 h-20 z M40,70 h20 v20 h-20 z M70,70 h30 v30 h-30 z"/>
+                        </svg>
+                    </div>
+                    <p class="text-stone-300">Отсканируйте QR-код в приложении вашего банка для оплаты через СБП</p>
+                    <button id="btn-pay-sbp" class="w-full bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg text-sm shadow flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-check"></i> Я ОПЛАТИЛ В БАНКЕ
+                    </button>
+                </div>
+
+                <!-- Admin Sandbox Quick Button -->
+                <div class="border-t border-stone-800 pt-2 text-center">
+                    <button id="btn-pay-sandbox" class="text-amber-400 hover:underline text-xs font-mono">
+                        <i class="fa-solid fa-bug mr-1"></i> Тестовая мгновенная оплата (Admin Sandbox)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MEMORIAL MODAL -->
+    <div id="memorial-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden pointer-events-auto">
+        <div class="pixel-card max-w-2xl w-full rounded-lg p-6 relative flex flex-col gap-4 text-stone-200 border-2 border-rose-900/60">
+            <button id="close-memorial-btn" class="absolute top-3 right-3 text-stone-400 hover:text-stone-100 text-xl"><i class="fa-solid fa-xmark"></i></button>
+            
+            <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 border-b border-stone-700 pb-4">
+                <div id="memorial-sprite-preview" class="w-56 h-64 sm:w-64 sm:h-72 shrink-0 bg-stone-950 border-2 border-rose-900/80 rounded-lg flex items-center justify-center p-2 shadow-inner overflow-hidden"></div>
+                <div class="flex-1 text-center sm:text-left">
+                    <span class="text-xs uppercase tracking-widest text-rose-500 font-bold block mb-1">Захоронение Бывшей Любви</span>
+                    <h2 id="memorial-pair-name" class="font-gothic text-2xl font-bold text-rose-100">А + Б</h2>
+                    <p id="memorial-dates" class="text-xs font-mono text-stone-400">2023 — 2024</p>
+                    <div class="mt-2 flex items-center gap-3 text-xs text-amber-400">
+                        <span id="memorial-candles-count"><i class="fa-solid fa-fire mr-1 text-amber-500"></i> Свечей: 0</span>
+                        <span id="memorial-flowers-count"><i class="fa-solid fa-spa mr-1 text-rose-400"></i> Увядших роз: 0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-stone-950/90 border border-stone-800 rounded p-4 relative">
+                <i class="fa-solid fa-quote-left text-rose-900/30 text-3xl absolute top-2 left-2 pointer-events-none"></i>
+                <p id="memorial-epitaph" class="font-gothic italic text-lg text-stone-300 text-center relative z-10 py-2">
+                    "Здесь покоятся обещания, которым не суждено было сбыться."
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button id="btn-light-candle" class="pixel-btn bg-amber-950 hover:bg-amber-900 text-amber-200 border border-amber-700 p-2.5 rounded text-xs font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-fire text-amber-400"></i> Зажечь свечу памяти
+                </button>
+                <button id="btn-place-flower" class="pixel-btn bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-700 p-2.5 rounded text-xs font-bold flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-spa text-rose-400"></i> Положить сухую розу
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD MODAL -->
+    <div id="admin-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md hidden pointer-events-auto">
+        <div class="pixel-card max-w-2xl w-full rounded-xl p-6 relative flex flex-col gap-4 text-stone-200 border-2 border-amber-700 shadow-2xl">
+            <button id="close-admin-btn" class="absolute top-3 right-3 text-stone-400 hover:text-stone-100 text-xl"><i class="fa-solid fa-xmark"></i></button>
+
+            <div class="flex items-center gap-3 border-b border-amber-900/60 pb-3">
+                <i class="fa-solid fa-user-shield text-amber-400 text-2xl"></i>
+                <div>
+                    <h2 class="font-gothic text-xl font-bold text-amber-200">ПАНЕЛЬ АДМИНИСТРАТОРА</h2>
+                    <p class="text-xs text-stone-400">Управление картой кладбища, балансом и списком захоронений</p>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2 text-xs">
+                <button id="editor-toggle-btn" class="bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-700 px-3 py-2 rounded font-bold flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-ruler"></i> <span id="editor-mode-text">Включить Редактор Кладбища</span>
+                </button>
+                <button id="btn-admin-add-money" class="bg-amber-950 hover:bg-amber-900 text-amber-200 border border-amber-700 px-3 py-2 rounded font-bold">
+                    <i class="fa-solid fa-coins text-amber-400 mr-1"></i> +50 000 ₽ Баланс
+                </button>
+                <button id="btn-admin-clear-graves" class="bg-red-950 hover:bg-red-900 text-red-200 border border-red-700 px-3 py-2 rounded font-bold">
+                    <i class="fa-solid fa-trash mr-1"></i> Очистить все могилы
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <h3 class="text-xs font-bold text-stone-400 uppercase">Список всех захоронений на карте:</h3>
+                <div id="admin-graves-list" class="max-h-52 overflow-y-auto bg-stone-950 border border-stone-800 rounded p-2 text-xs space-y-1">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC ENGINE -->
     <script>
-        const SUPABASE_URL = 'https://jynyjxaoxdidswddhzhm.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_szmni...'; 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        let isRegisterMode = false;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const authOverlay = document.getElementById('auth-modal-overlay');
-            const authTitle = document.getElementById('auth-title');
-            const nameGroup = document.getElementById('nameGroup');
-            const authSubmitBtn = document.getElementById('authSubmitBtn');
-            const toggleAuthMode = document.getElementById('toggleAuthMode');
-            const closeAuthModal = document.getElementById('closeAuthModal');
-            const authForm = document.getElementById('authForm');
-
-            toggleAuthMode.onclick = () => {
-                isRegisterMode = !isRegisterMode;
-                if (isRegisterMode) {
-                    authTitle.innerText = 'Регистрация';
-                    nameGroup.style.display = 'block';
-                    authSubmitBtn.innerText = 'Зарегистрироваться';
-                    toggleAuthMode.innerText = 'Уже есть аккаунт? Войти';
-                } else {
-                    authTitle.innerText = 'Вход на кладбище';
-                    nameGroup.style.display = 'none';
-                    authSubmitBtn.innerText = 'Войти';
-                    toggleAuthMode.innerText = 'Нет аккаунта? Зарегистрироваться';
-                }
-            };
-
-            closeAuthModal.onclick = () => {
-                authOverlay.style.display = 'none';
-            };
-
-            authForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('emailInput').value.trim();
-                const password = document.getElementById('passwordInput').value.trim();
-
-                if (!isRegisterMode && email === 'admin' && password === 'admin') {
-                    alert('Вход выполнен под учетной записью администратора!');
-                    authOverlay.style.display = 'none';
-                    window.startGameScene();
-                    return;
-                }
-
-                if (isRegisterMode) {
-                    const { data, error } = await supabaseClient.auth.signUp({ email, password });
-                    if (error) {
-                        alert('Ошибка регистрации: ' + error.message);
-                    } else {
-                        alert('Регистрация успешна! Проверьте почту.');
-                        authOverlay.style.display = 'none';
-                        window.startGameScene();
-                    }
-                } else {
-                    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-                    if (error) {
-                        alert('Ошибка входа: ' + error.message);
-                    } else {
-                        alert('Вход выполнен успешно!');
-                        authOverlay.style.display = 'none';
-                        window.startGameScene();
-                    }
-                }
-            };
-        });
-
-        class MenuScene extends Phaser.Scene {
-            constructor() { super('MenuScene'); }
-
-            create() {
-                const width = this.scale.width;
-                const height = this.scale.height;
-
-                this.add.rectangle(0, 0, width, height, 0x070710).setOrigin(0);
-                
-                const g = this.add.graphics();
-                g.lineStyle(2, 0xff4d4d, 0.2);
-                for (let i = 0; i < height; i += 40) {
-                    g.lineBetween(0, i, width, i);
-                }
-
-                this.add.text(width / 2, height / 3 - 60, 'КЛАДБИЩЕ ЛЮБВИ', {
-                    fontSize: '52px',
-                    fill: '#ff4d4d',
-                    fontStyle: 'bold',
-                    align: 'center',
-                    shadow: { offsetX: 3, offsetY: 3, color: '#000', blur: 0, fill: true }
-                }).setOrigin(0.5);
-
-                this.add.text(width / 2, height / 3 + 10, '«Здесь покоятся те, кто сгорел ярче всех»', {
-                    fontSize: '18px',
-                    fill: '#00ffff',
-                    fontStyle: 'italic',
-                    align: 'center'
-                }).setOrigin(0.5);
-
-                const btnBg = this.add.rectangle(width / 2, height / 2 + 60, 320, 65, 0x16192b);
-                btnBg.setStrokeStyle(2, 0xff4d4d);
-                const btnText = this.add.text(width / 2, height / 2 + 60, 'ВОЙТИ НА КЛАДБИЩЕ', {
-                    fontSize: '20px',
-                    fill: '#ffffff',
-                    fontStyle: 'bold'
-                }).setOrigin(0.5);
-
-                btnBg.setInteractive({ useHandCursor: true });
-                btnBg.on('pointerover', () => {
-                    btnBg.setFillStyle(0xff4d4d);
-                    btnText.setFill(0x000000);
-                });
-                btnBg.on('pointerout', () => {
-                    btnBg.setFillStyle(0x16192b);
-                    btnText.setFill(0xffffff);
-                });
-                btnBg.on('pointerdown', () => {
-                    document.getElementById('auth-modal-overlay').style.display = 'flex';
-                });
-
-                window.startGameScene = () => {
-                    this.scene.start('GameScene');
-                };
-            }
-        }
-
-        class GameScene extends Phaser.Scene {
-            constructor() {
-                super('GameScene');
-                this.selectedCell = null;
-                this.gridCells = [];
-            }
-
-            preload() {
-                this.generateReferenceGraphics();
-            }
-
-            generateReferenceGraphics() {
-                const g = this.make.graphics({ x: 0, y: 0, add: false });
-
-                // Земля (мохнатый газон)
-                g.clear();
-                g.fillStyle(0x3e524d, 1);
-                g.fillRect(0, 0, 64, 64);
-                g.fillStyle(0x4a635c, 1);
-                g.fillRect(2, 2, 60, 60);
-                g.generateTexture('ground_tile', 64, 64);
-
-                // Брусчатая аллея
-                g.clear();
-                g.fillStyle(0x2f3542, 1);
-                g.fillRect(0, 0, 64, 64);
-                g.fillStyle(0x57606f, 1);
-                g.fillRect(4, 4, 56, 56);
-                g.generateTexture('path_tile', 64, 64);
-
-                // Часовня
-                g.clear();
-                g.fillStyle(0x000000, 0.6);
-                g.fillEllipse(90, 175, 160, 40);
-                g.fillStyle(0xc8b8a6, 1);
-                g.fillRect(30, 40, 120, 120);
-                g.fillStyle(0x3d2817, 1);
-                g.fillRoundedRect(70, 90, 40, 70, { tl: 20, tr: 20, bl: 0, br: 0 });
-                g.fillStyle(0x7a6352, 1);
-                g.beginPath();
-                g.moveTo(90, 2);
-                g.lineTo(165, 45);
-                g.lineTo(15, 45);
-                g.closePath();
-                g.fillPath();
-                g.generateTexture('chapel_building', 180, 180);
-
-                // Фонарь
-                g.clear();
-                g.fillStyle(0x000000, 0.5);
-                g.fillEllipse(16, 75, 20, 10);
-                g.fillStyle(0x1e2226, 1);
-                g.fillRect(12, 16, 8, 60);
-                g.fillStyle(0xf1c40f, 1);
-                g.fillRect(6, 4, 20, 16);
-                g.generateTexture('lamp_post', 32, 80);
-
-                // Надгробие 0 (Стела с крестом)
-                g.clear();
-                g.fillStyle(0x000000, 0.6);
-                g.fillEllipse(24, 60, 36, 12);
-                g.fillStyle(0xa39b90, 1);
-                g.fillRoundedRect(6, 12, 36, 46, { tl: 14, tr: 14, bl: 2, br: 2 });
-                g.fillStyle(0x7c7368, 1);
-                g.fillRoundedRect(9, 15, 30, 40, { tl: 12, tr: 12, bl: 1, br: 1 });
-                g.fillStyle(0xa39b90, 1);
-                g.fillRect(21, 2, 6, 14);
-                g.fillRect(17, 6, 14, 5);
-                g.generateTexture('tomb_0', 48, 68);
-
-                // Надгробие 1 (Округлый камень)
-                g.clear();
-                g.fillStyle(0x000000, 0.6);
-                g.fillEllipse(24, 60, 38, 12);
-                g.fillStyle(0x948c82, 1);
-                g.fillCircle(24, 30, 20);
-                g.fillRect(4, 30, 40, 30);
-                g.fillStyle(0x6e665d, 1);
-                g.fillCircle(24, 30, 17);
-                g.fillRect(7, 30, 34, 26);
-                g.generateTexture('tomb_1', 48, 68);
-
-                // Надгробие 2 (Плита)
-                g.clear();
-                g.fillStyle(0x000000, 0.6);
-                g.fillEllipse(24, 60, 40, 12);
-                g.fillStyle(0x857d74, 1);
-                g.fillRect(4, 18, 40, 42);
-                g.fillStyle(0x5c554e, 1);
-                g.fillRect(7, 21, 34, 36);
-                g.generateTexture('tomb_2', 48, 68);
-
-                // Игрок
-                g.clear();
-                g.fillStyle(0x000000, 0.6);
-                g.fillEllipse(16, 56, 22, 12);
-                g.fillStyle(0x2c2c38, 1);
-                g.fillRect(9, 28, 14, 24);
-                g.fillStyle(0xc0392b, 1);
-                g.fillRect(9, 16, 14, 16);
-                g.fillStyle(0xf1c40f, 1);
-                g.fillRect(9, 4, 14, 8);
-                g.generateTexture('player_sprite', 32, 60);
-
-                // Катафалк
-                g.clear();
-                g.fillStyle(0x000000, 0.7);
-                g.fillEllipse(70, 48, 120, 20);
-                g.fillStyle(0x111217, 1);
-                g.fillRoundedRect(10, 15, 120, 32, 6);
-                g.fillStyle(0x1a1d24, 1);
-                g.fillRoundedRect(35, 6, 60, 22, 4);
-                g.fillStyle(0x0b0b0b, 1);
-                g.fillCircle(30, 44, 10);
-                g.fillCircle(105, 44, 10);
-                g.fillStyle(0xdcdde1, 1);
-                g.fillCircle(30, 44, 4);
-                g.fillCircle(105, 44, 4);
-                g.generateTexture('hearse_sprite', 140, 60);
-            }
-
-            create() {
-                const mapWidth = 2400;
-                const mapHeight = 2400;
-
-                // Земля и центральная аллея
-                this.add.tileSprite(0, 0, mapWidth, mapHeight, 'ground_tile').setOrigin(0);
-                this.add.tileSprite(1150, 0, 200, mapHeight, 'path_tile').setOrigin(0.5, 0);
-
-                // Окружение
-                const chapel = this.add.sprite(350, 400, 'chapel_building');
-                chapel.setOrigin(0.5, 0.8);
-                chapel.setDepth(400);
-
-                const lamp = this.add.sprite(1220, 1200, 'lamp_post');
-                lamp.setOrigin(0.5, 0.9);
-                lamp.setDepth(1200);
-
-                this.physics.world.setBounds(0, 0, mapWidth, mapHeight);
-
-                // --- ИЗОМЕТРИЧЕСКАЯ СЕТКА КЛАДБИЩА С ПОДСВЕТКОЙ ПРИ НАВЕДЕНИИ ---
-                // Создаем участки (клеточки) под углом для установки могил
-                const tileWidth = 96;
-                const tileHeight = 54;
-                
-                // Зоны слева и справа от центральной аллеи
-                const colsLeft = [600, 720, 840, 960];
-                const colsRight = [1340, 1460, 1580, 1700];
-                const rows = [600, 720, 840, 960, 1080, 1200, 1320, 1440];
-
-                [colsLeft, colsRight].forEach(cols => {
-                    cols.forEach(cx => {
-                        rows.forEach(cy => {
-                            // Рисуем изометрический ромб (клетку) под углом
-                            const cellGfx = this.add.graphics();
-                            cellGfx.lineStyle(1, 0x00ffff, 0.3);
-                            cellGfx.fillStyle(0x00ffff, 0.05);
-
-                            // Координаты ромба
-                            cellGfx.beginPath();
-                            cellGfx.moveTo(cx, cy - tileHeight / 2);
-                            cellGfx.lineTo(cx + tileWidth / 2, cy);
-                            cellGfx.lineTo(cx, cy + tileHeight / 2);
-                            cellGfx.lineTo(cx - tileWidth / 2, cy);
-                            cellGfx.closePath();
-                            cellGfx.fillPath();
-                            cellGfx.strokePath();
-                            cellGfx.setDepth(cy - 10);
-
-                            // Интерактивная зона для подсветки мышей
-                            const hitArea = new Phaser.Geom.Polygon([
-                                cx, cy - tileHeight / 2,
-                                cx + tileWidth / 2, cy,
-                                cx, cy + tileHeight / 2,
-                                cx - tileWidth / 2, cy
-                            ]);
-
-                            const zone = this.add.zone(cx, cy, tileWidth, tileHeight)
-                                .setInteractive({ hitArea: hitArea, hitAreaCallback: Phaser.Geom.Polygon.Contains, useHandCursor: true });
-                            
-                            zone.setDepth(cy);
-
-                            // Подсветка при наведении
-                            zone.on('pointerover', () => {
-                                cellGfx.clear();
-                                cellGfx.lineStyle(2, 0xff4d4d, 0.9);
-                                cellGfx.fillStyle(0xff4d4d, 0.35);
-                                cellGfx.beginPath();
-                                cellGfx.moveTo(cx, cy - tileHeight / 2);
-                                cellGfx.lineTo(cx + tileWidth / 2, cy);
-                                cellGfx.lineTo(cx, cy + tileHeight / 2);
-                                cellGfx.lineTo(cx - tileWidth / 2, cy);
-                                cellGxf.closePath();
-                                cellGxf.fillPath();
-                                cellGxf.strokePath();
-                            });
-
-                            zone.on('pointerout', () => {
-                                cellGfx.clear();
-                                cellGfx.lineStyle(1, 0x00ffff, 0.3);
-                                cellGfx.fillStyle(0x00ffff, 0.05);
-                                cellGfx.beginPath();
-                                cellGfx.moveTo(cx, cy - tileHeight / 2);
-                                cellGfx.lineTo(cx + tileWidth / 2, cy);
-                                cellGfx.lineTo(cx, cy + tileHeight / 2);
-                                cellGfx.lineTo(cx - tileWidth / 2, cy);
-                                cellGfx.closePath();
-                                cellGfx.fillPath();
-                                cellGfx.strokePath();
-                            });
-
-                            zone.on('pointerdown', () => {
-                                if (document.getElementById('grave-form-overlay').style.display === 'flex' ||
-                                    document.getElementById('auth-modal-overlay').style.display === 'flex') return;
-
-                                this.selectedCell = { x: cx, y: cy };
-                                document.getElementById('grave-form-overlay').style.display = 'flex';
-                            });
-
-                            this.gridCells.push({ cellGfx, cx, cy });
-                        });
-                    });
-                });
-
-                // Игрок
-                this.player = this.add.sprite(1200, 1100, 'player_sprite');
-                this.player.setOrigin(0.5, 0.85);
-                this.physics.add.existing(this.player);
-                this.player.body.setCollideWorldBounds(true);
-                this.player.body.setSize(20, 16);
-                this.player.body.setOffset(6, 40);
-
-                this.cameras.main.setBounds(0, 0, mapWidth, mapHeight);
-                this.cameras.main.startFollow(this.player, true, 0.08, 0.08);
-
-                this.cursors = this.input.keyboard.createCursorKeys();
-                this.wasd = this.input.keyboard.addKeys({
-                    up: Phaser.Input.Keyboard.KeyCodes.W,
-                    down: Phaser.Input.Keyboard.KeyCodes.S,
-                    left: Phaser.Input.Keyboard.KeyCodes.A,
-                    right: Phaser.Input.Keyboard.KeyCodes.D
-                });
-
-                this.setupHTMLFormHandlers();
-                this.createUI();
-            }
-
-            setupHTMLFormHandlers() {
-                const overlay = document.getElementById('grave-form-overlay');
-                const form = document.getElementById('graveForm');
-                const cancelBtn = document.getElementById('cancelGraveBtn');
-                const randomBtn = document.getElementById('randomEpitaphBtn');
-                const initialsInput = document.getElementById('initialsInput');
-
-                initialsInput.addEventListener('input', (e) => {
-                    let val = e.target.value.toUpperCase().replace(/[^А-ЯA-Z]/g, '');
-                    if (val.length > 2) val = val.substring(0, 2);
-                    e.target.value = val;
-                });
-
-                const randomPhrases = [
-                    "Сгорел ярче всех в галактике",
-                    "Обещал позвонить и пропал",
-                    "Любил пиво больше, чем меня",
-                    "Его шутки про бывших были смешнее",
-                    "Покойся с миром, мой бывший курс",
-                    "Сердце занято... под склад хлама"
-                ];
-                randomBtn.onclick = () => {
-                    document.getElementById('epitaphInput').value = randomPhrases[Math.floor(Math.random() * randomPhrases.length)];
-                };
-
-                cancelBtn.onclick = () => {
-                    overlay.style.display = 'none';
-                };
-
-                form.onsubmit = (e) => {
-                    e.preventDefault();
-                    const type = document.getElementById('tombstoneType').value;
-                    const initials = initialsInput.value;
-                    const epitaph = document.getElementById('epitaphInput').value || 'Вечная память';
-
-                    if (initials.length < 2) {
-                        alert('Введите ровно две буквы инициалов!');
-                        return;
-                    }
-
-                    overlay.style.display = 'none';
-                    form.reset();
-
-                    if (this.selectedCell) {
-                        this.spawnGrave(this.selectedCell.x, this.selectedCell.y, type, initials, epitaph);
-                    }
-                };
-            }
-
-            spawnGrave(x, y, type, initials, epitaph) {
-                const hearse = this.add.sprite(x - 500, y, 'hearse_sprite');
-                hearse.setOrigin(0.5, 0.8);
-                hearse.setDepth(y + 100);
-
-                this.tweens.add({
-                    targets: hearse,
-                    x: x - 40,
-                    duration: 1800,
-                    ease: 'Power2',
-                    onComplete: () => {
-                        const tomb = this.add.sprite(x, y, `tomb_${type}`);
-                        tomb.setOrigin(0.5, 1.0);
-                        
-                        const text = this.add.text(x, y - 48, initials, {
-                            fontSize: '12px',
-                            fill: '#f1c40f',
-                            fontStyle: 'bold',
-                            backgroundColor: '#000000cc',
-                            padding: { x: 4, y: 2 }
-                        }).setOrigin(0.5, 1.0);
-
-                        tomb.setDepth(y);
-                        text.setDepth(y + 1);
-
-                        this.tweens.add({
-                            targets: hearse,
-                            x: x + 500,
-                            duration: 1800,
-                            delay: 1000,
-                            ease: 'Power2',
-                            onComplete: () => hearse.destroy()
-                        });
-                    }
-                });
-            }
-
-            createUI() {
-                const uiText = this.add.text(25, 25, '🏆 Кладбище: Изометрическая сетка\n\n💡 Наведите мышь на ячейку под углом и кликните для установки мемориала', {
-                    fontSize: '15px',
-                    fill: '#00ffff',
-                    backgroundColor: '#070710cc',
-                    padding: { x: 12, y: 12 }
-                });
-                uiText.setScrollFactor(0);
-                uiText.setDepth(9999);
-
-                this.time.delayedCall(7000, () => {
-                    this.tweens.add({
-                        targets: uiText,
-                        alpha: 0,
-                        duration: 1000,
-                        onComplete: () => uiText.destroy()
-                    });
-                });
-            }
-
-            update() {
-                if (document.getElementById('grave-form-overlay').style.display === 'flex' || 
-                    document.getElementById('auth-modal-overlay').style.display === 'flex') {
-                    this.player.body.setVelocity(0);
-                    return;
-                }
-
-                const speed = 220;
-                const body = this.player.body;
-                body.setVelocity(0);
-
-                if (this.cursors.left.isDown || this.wasd.left.isDown) {
-                    body.setVelocityX(-speed);
-                } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-                    body.setVelocityX(speed);
-                }
-
-                if (this.cursors.up.isDown || this.wasd.up.isDown) {
-                    body.setVelocityY(-speed);
-                } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-                    body.setVelocityY(speed);
-                }
-
-                this.player.setDepth(this.player.y);
-            }
-        }
-
-        const config = {
-            type: Phaser.AUTO,
-            width: window.innerWidth,
-            height: window.innerHeight,
-            parent: 'game-container',
-            pixelArt: true,
-            roundPixels: true,
-            physics: {
-                default: 'arcade',
-                arcade: { gravity: { y: 0 }, debug: false }
-            },
-            scene: [MenuScene, GameScene]
+        // ===================================================================
+        // 1. ENGINE CONFIG, AUTH & GLOBAL STATE
+        // ===================================================================
+        const TILE_WIDTH = 64;   
+        const TILE_HEIGHT = 32;  
+        const MAP_SIZE = 34;     
+
+        let currentUser = null; // { username: string, isAdmin: boolean }
+        let userBalance = 15000;
+        let timeOfDay = 'twilight';
+        let editorMode = false;
+        let selectedCategory = 'tiles';
+        let selectedSpriteIndex = 0;
+        let selectedTool = 'paint';
+
+        // Order & Burial State
+        let pendingBurialCell = null; // { gx, gy }
+        let selectedBurialTombstoneIndex = 0;
+        let pendingOrderData = null;
+
+        const TombstonePrices = [
+            500, 750, 800, 1000, 1200, 1500, 1500, 1800, 2000, 2200, 
+            2500, 2800, 3000, 3200, 3500, 4000, 4200, 4500, 4800, 5000
+        ];
+
+        const GeneratedEpitaphs = [
+            "Ты говорил, что любишь дождь, но открывал зонт.",
+            "Здесь похоронена последняя попытка доверять людям.",
+            "Вместе навсегда (срок годности: 3 месяца).",
+            "Спасибо за опыт, больше не нужно.",
+            "Здесь покоится несказанное 'прости' и прочитанное 'в сети'.",
+            "Твое 'дело не в тебе' теперь под слоем мрамора.",
+            "Прощай. Твой номер давно удален из контактов.",
+            "Спи спокойно, наша несуществующая любовь."
+        ];
+
+        // Embedded Base64 / Generated Sprite References for 20 Tombstones Asset
+        const Sprites = {
+            tiles: [],     
+            graves: [],    
+            graveNames: [], // Имена спрайтов могил (включая имена файлов из pic/ без расширения)
+            customGraveSources: new Set(), // Учёт уже загруженных файлов из pic/
+            trees: [],     
+            fences: [],    
+            pallbearers: null, // 6 people carrying a coffin
+            garage: null
         };
 
-        const game = new Phaser.Game(config);
+        const SUPPORTED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
+        const PIC_FOLDER_PATH = './pic/';
+        let picDirectoryHandle = null; // File System Access API handle (для live-скана локальной папки pic)
 
-        window.addEventListener('resize', () => {
-            game.scale.resize(window.innerWidth, window.innerHeight);
+        const camera = {
+            x: 0,
+            y: 120,
+            zoom: 1.0,
+            minZoom: 0.45,
+            maxZoom: 2.5,
+            isDragging: false,
+            startX: 0,
+            startY: 0
+        };
+
+        // Pallbearers Procession State (6 people carrying a coffin, starts at grid (17, 1))
+        const hearse = {
+            gridX: 17,
+            gridY: 1,
+            homeX: 17,
+            homeY: 1,
+            worldX: 0, worldY: 0,
+            angle: Math.PI / 2, // Facing down main avenue
+            speed: 0,
+            lightsOn: true, // Lantern glow in front of procession
+            walkPhase: 0,
+            // Pathfinding Mission State
+            isAutomated: false,
+            missionState: 'idle', // 'driving_to_perp', 'driving_to_grave', 'burying', 'returning_to_road', 'driving_home', 'parked'
+            targetGraveX: 0,
+            targetGraveY: 0,
+            perpRoadX: 17,
+            perpRoadY: 0,
+            pendingBurialData: null,
+            burialTimer: 0
+        };
+
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+
+        // Grid Map Data (Roads at column 17 and row 17)
+        const gridMap = Array.from({ length: MAP_SIZE }, (_, x) =>
+            Array.from({ length: MAP_SIZE }, (_, y) => {
+                let tileType = 0; 
+                const isGarageSpot = (x === 17 && y === 1);
+                const isMainAvenue = (x === 17); // Central North-South Road
+                const isCrossAvenue = (y === 9 || y === 17 || y === 25); // Horizontal Cross Roads
+                const isBorder = (x === 0 || y === 0 || x === MAP_SIZE - 1 || y === MAP_SIZE - 1);
+
+                if (isGarageSpot) {
+                    tileType = 2; // Road tile inside garage
+                } else if (isMainAvenue || isCrossAvenue) {
+                    tileType = (Math.random() > 0.3) ? 2 : 3; 
+                } else if (Math.random() < 0.15) {
+                    tileType = 1; 
+                }
+
+                let obj = null;
+                if (isBorder) {
+                    obj = { cat: 'fences', index: 6, candles: 0, flowers: 0 }; 
+                }
+
+                return { tile: tileType, object: obj };
+            })
+        );
+
+        function initDefaultCemeteryLayout() {
+            // Lamps along main avenue
+            const lampCoords = [[16, 5], [18, 12], [16, 20], [18, 28]];
+            lampCoords.forEach(([lx, ly]) => {
+                gridMap[lx][ly].object = { cat: 'fences', index: 0, candles: 0, flowers: 0, isLamp: true };
+            });
+
+            // Initial graves
+            const samplePairs = [
+                { p1: "А", p2: "Б", ep: "Здесь покоится несказанное 'прости'." },
+                { p1: "Б", p2: "В", ep: "Переписка 2022–2024 гг. Удалено." },
+                { p1: "М", p2: "Ж", ep: "Наши несостоявшиеся планы на лето." },
+                { p1: "Е", p2: "Д", ep: "Обещание позвонить в понедельник." }
+            ];
+
+            let sampleIdx = 0;
+            for (let x = 4; x < MAP_SIZE - 4; x += 5) {
+                for (let y = 5; y < MAP_SIZE - 4; y += 6) {
+                    if (x === 17 || y === 9 || y === 17 || y === 25) continue;
+                    const sample = samplePairs[sampleIdx % samplePairs.length];
+                    sampleIdx++;
+
+                    gridMap[x][y].object = {
+                        cat: 'graves',
+                        index: Math.floor(Math.random() * 12),
+                        candles: Math.floor(Math.random() * 3),
+                        flowers: Math.floor(Math.random() * 2),
+                        p1: sample.p1, p2: sample.p2,
+                        name: `Пара «${sample.p1} + ${sample.p2}»`,
+                        dates: "2023 — 2024",
+                        epitaph: sample.ep
+                    };
+                }
+            }
+        }
+
+        // ===================================================================
+        // 2. PROCEDURAL SPRITES & GARAGE BUILDER
+        // ===================================================================
+        function createPixelCanvas(w, h, drawFn) {
+            const cvs = document.createElement('canvas');
+            cvs.width = w; cvs.height = h;
+            const ctx = cvs.getContext('2d');
+            ctx.imageSmoothingEnabled = false;
+            drawFn(ctx, w, h);
+            return cvs;
+        }
+
+        function generateProceduralTiles() {
+            Sprites.tiles = [];
+            const palette = {
+                darkGrass: '#1a241b', grass: '#263427', lightGrass: '#364837',
+                cobbleBase: '#2a2e38', cobbleLight: '#474d5c', cobbleDark: '#191b21',
+                mound: '#362a22', mud: '#29211c'
+            };
+
+            for (let i = 0; i < 50; i++) {
+                const sprite = createPixelCanvas(64, 32, (ctx, w, h) => {
+                    ctx.beginPath();
+                    ctx.moveTo(32, 0); ctx.lineTo(64, 16); ctx.lineTo(32, 32); ctx.lineTo(0, 16);
+                    ctx.closePath();
+
+                    const type = i % 8;
+                    if (type === 0 || type === 1) { 
+                        ctx.fillStyle = (i % 2 === 0) ? palette.grass : palette.darkGrass;
+                        ctx.fill();
+                        ctx.fillStyle = palette.lightGrass;
+                        for (let p = 0; p < 8; p++) ctx.fillRect(16 + Math.random() * 32, 8 + Math.random() * 16, 2, 2);
+                    } else if (type === 2 || type === 3) { 
+                        ctx.fillStyle = palette.cobbleBase; ctx.fill();
+                        ctx.strokeStyle = palette.cobbleDark; ctx.lineWidth = 1;
+                        for (let cx = 8; cx < 56; cx += 12) {
+                            for (let cy = 6; cy < 26; cy += 8) {
+                                ctx.fillStyle = (Math.random() > 0.4) ? palette.cobbleLight : palette.cobbleBase;
+                                ctx.fillRect(cx + ((cy / 8) % 2 * 4), cy, 10, 6);
+                                ctx.strokeRect(cx + ((cy / 8) % 2 * 4), cy, 10, 6);
+                            }
+                        }
+                    } else if (type === 4) { // Fresh Mound
+                        ctx.fillStyle = palette.mound; ctx.fill();
+                        ctx.fillStyle = palette.mud;
+                        for (let p = 0; p < 18; p++) ctx.fillRect(18 + Math.random() * 28, 8 + Math.random() * 14, 3, 2);
+                    } else { 
+                        ctx.fillStyle = palette.mud; ctx.fill();
+                    }
+                    ctx.strokeStyle = 'rgba(0,0,0,0.3)'; ctx.stroke();
+                });
+                Sprites.tiles.push(sprite);
+            }
+        }
+
+        function generateProceduralGraves() {
+            Sprites.graves = [];
+            Sprites.graveNames = [];
+            const stoneLight = '#5a6275'; const stoneMid = '#3e4452'; const stoneDark = '#252933';
+
+            for (let i = 0; i < 20; i++) {
+                const sprite = createPixelCanvas(64, 80, (ctx, w, h) => {
+                    ctx.fillStyle = 'rgba(10, 12, 16, 0.6)';
+                    ctx.beginPath(); ctx.ellipse(32, 70, 22, 10, 0, 0, Math.PI * 2); ctx.fill();
+
+                    if (i >= 15) { // Crypt
+                        ctx.fillStyle = stoneDark; ctx.fillRect(12, 20, 40, 48);
+                        ctx.fillStyle = stoneMid; ctx.fillRect(16, 22, 32, 44);
+                        ctx.fillStyle = stoneLight;
+                        ctx.beginPath(); ctx.moveTo(32, 5); ctx.lineTo(54, 22); ctx.lineTo(10, 22); ctx.fill();
+                    } else if (i % 3 === 0) { // Cross
+                        ctx.fillStyle = stoneMid; ctx.fillRect(28, 25, 8, 45); ctx.fillRect(20, 35, 24, 8);
+                        ctx.fillStyle = stoneLight; ctx.fillRect(29, 26, 6, 43);
+                    } else { // Classic Tombstone
+                        ctx.fillStyle = stoneDark; ctx.fillRect(20, 30, 24, 38);
+                        ctx.fillStyle = stoneMid; ctx.fillRect(22, 32, 20, 34);
+                        ctx.beginPath(); ctx.arc(32, 32, 10, Math.PI, 0); ctx.fill();
+                    }
+                });
+                Sprites.graves.push(sprite);
+                Sprites.graveNames.push(`Памятник #${i + 1}`);
+            }
+        }
+
+        function generateProceduralTrees() {
+            Sprites.trees = [];
+            for (let i = 0; i < 20; i++) {
+                const sprite = createPixelCanvas(80, 100, (ctx, w, h) => {
+                    ctx.fillStyle = 'rgba(8, 10, 14, 0.6)';
+                    ctx.beginPath(); ctx.ellipse(40, 85, 20, 9, 0, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#2b211a'; ctx.fillRect(36, 40, 8, 48);
+                    ctx.fillStyle = '#1b261d';
+                    ctx.beginPath(); ctx.arc(40, 30, 24, 0, Math.PI * 2); ctx.fill();
+                });
+                Sprites.trees.push(sprite);
+            }
+        }
+
+        function generateProceduralFences() {
+            Sprites.fences = [];
+            for (let i = 0; i < 20; i++) {
+                const sprite = createPixelCanvas(64, 80, (ctx, w, h) => {
+                    if (i === 0 || i === 1) { // Street lamp
+                        ctx.fillStyle = '#242833'; ctx.fillRect(30, 20, 4, 52);
+                        ctx.fillStyle = '#ffdf7a'; ctx.fillRect(27, 10, 10, 10);
+                    } else {
+                        ctx.fillStyle = '#242833'; ctx.fillRect(4, 38, 56, 3); ctx.fillRect(4, 56, 56, 3);
+                        for (let p = 8; p < 58; p += 10) ctx.fillRect(p, 25, 3, 36);
+                    }
+                });
+                Sprites.fences.push(sprite);
+            }
+        }
+
+        function generateProceduralHearseAndGarage() {
+            // 6 Pallbearers carrying a coffin (detailed pixel art with fixed grounded feet)
+            Sprites.pallbearers = createPixelCanvas(128, 64, (ctx, w, h) => {
+                // Ground shadow under the 6 carriers and coffin
+                ctx.fillStyle = 'rgba(8, 9, 12, 0.75)';
+                ctx.beginPath();
+                ctx.ellipse(64, 52, 56, 10, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Helper to draw one detailed mourning pallbearer with grounded feet
+                const drawCarrier = (cx, isBackRow) => {
+                    const yShift = isBackRow ? -2 : 1;
+                    const footY = 47 + yShift; // Fixed ground line for feet so legs don't spin/swing wildly
+
+                    // Grounded dark shoes & trousers (fixed in place)
+                    ctx.fillStyle = '#0d0f14';
+                    ctx.fillRect(cx - 6, footY, 5, 3);
+                    ctx.fillRect(cx + 1, footY, 5, 3);
+
+                    ctx.fillStyle = isBackRow ? '#171a24' : '#1e222e';
+                    ctx.fillRect(cx - 5, footY - 8, 4, 8);
+                    ctx.fillRect(cx + 1, footY - 8, 4, 8);
+                    // Trousers crease highlight
+                    ctx.fillStyle = '#2d3344';
+                    ctx.fillRect(cx - 4, footY - 7, 1, 6);
+                    ctx.fillRect(cx + 2, footY - 7, 1, 6);
+
+                    // Detailed mourning jacket / coat torso
+                    const torsoY = footY - 22;
+                    ctx.fillStyle = isBackRow ? '#1b1f2b' : '#252a38';
+                    ctx.fillRect(cx - 8, torsoY, 16, 15);
+                    // Shoulder padding & highlight
+                    ctx.fillStyle = '#3b4257';
+                    ctx.fillRect(cx - 8, torsoY, 16, 2);
+                    ctx.fillRect(cx - 8, torsoY, 2, 13);
+                    // White shirt & dark tie detail in front
+                    if (!isBackRow) {
+                        ctx.fillStyle = '#cbd5e1';
+                        ctx.fillRect(cx - 2, torsoY + 1, 4, 7);
+                        ctx.fillStyle = '#0f172a';
+                        ctx.fillRect(cx - 1, torsoY + 2, 2, 6);
+                    }
+
+                    // Raised arms & hands gripping the coffin rails
+                    ctx.fillStyle = '#252a38';
+                    ctx.fillRect(cx - 9, torsoY - 3, 4, 8);
+                    ctx.fillRect(cx + 5, torsoY - 3, 4, 8);
+                    ctx.fillStyle = '#c8a992';
+                    ctx.fillRect(cx - 8, torsoY - 5, 3, 3);
+                    ctx.fillRect(cx + 5, torsoY - 5, 3, 3);
+
+                    // Detailed head, facial features & hair/hat
+                    const headY = torsoY - 10;
+                    ctx.fillStyle = '#d4b59e';
+                    ctx.fillRect(cx - 4, headY, 8, 9);
+                    // Shading on right side of face
+                    ctx.fillStyle = '#a88770';
+                    ctx.fillRect(cx + 2, headY + 1, 2, 7);
+                    // Eyes & subtle brow
+                    ctx.fillStyle = '#14161c';
+                    ctx.fillRect(cx - 2, headY + 4, 2, 2);
+                    ctx.fillRect(cx + 1, headY + 4, 2, 2);
+
+                    // Hair / mourning cap
+                    ctx.fillStyle = '#13161f';
+                    ctx.fillRect(cx - 5, headY - 2, 10, 4);
+                    ctx.fillRect(cx - 4, headY - 4, 8, 2);
+                    ctx.fillStyle = '#2f3648';
+                    ctx.fillRect(cx - 3, headY - 3, 4, 1);
+                };
+
+                // Back row (3 carriers slightly higher for depth)
+                drawCarrier(24, true);
+                drawCarrier(64, true);
+                drawCarrier(104, true);
+
+                // Coffin resting across shoulders
+                ctx.fillStyle = '#111217';
+                ctx.fillRect(12, 13, 104, 13);
+                ctx.fillStyle = '#332427';
+                ctx.fillRect(14, 14, 100, 10);
+                // Coffin beveled lid & ornamental handles
+                ctx.fillStyle = '#574146';
+                ctx.fillRect(15, 14, 98, 2);
+                ctx.fillStyle = '#b89768';
+                ctx.fillRect(34, 18, 5, 3);
+                ctx.fillRect(62, 18, 5, 3);
+                ctx.fillRect(90, 18, 5, 3);
+
+                // Front row (3 carriers in foreground)
+                drawCarrier(20, false);
+                drawCarrier(64, false);
+                drawCarrier(108, false);
+            });
+
+            // MORGUE GARAGE PIXEL ART BUILDING
+            Sprites.garage = createPixelCanvas(140, 120, (ctx, w, h) => {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.beginPath(); ctx.ellipse(70, 105, 60, 15, 0, 0, Math.PI * 2); ctx.fill();
+
+                // Brick Walls
+                ctx.fillStyle = '#252933'; ctx.fillRect(20, 35, 100, 70);
+                ctx.fillStyle = '#363c4a'; ctx.fillRect(25, 38, 90, 64);
+
+                // Open Archway Gates
+                ctx.fillStyle = '#0d0e12';
+                ctx.beginPath(); ctx.arc(70, 65, 30, Math.PI, 0); ctx.fillRect(40, 65, 60, 37); ctx.fill();
+
+                // Roof
+                ctx.fillStyle = '#4a252f';
+                ctx.beginPath(); ctx.moveTo(10, 38); ctx.lineTo(70, 12); ctx.lineTo(130, 38); ctx.fill();
+
+                // Signboard
+                ctx.fillStyle = '#12141a'; ctx.fillRect(35, 25, 70, 14);
+                ctx.strokeStyle = '#883449'; ctx.lineWidth = 1; ctx.strokeRect(35, 25, 70, 14);
+                ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 10px Press Start 2P, cursive'; ctx.fillText('GARAGE', 42, 36);
+            });
+        }
+
+        function initAllProceduralSprites() {
+            generateProceduralTiles();
+            generateProceduralGraves();
+            generateProceduralTrees();
+            generateProceduralFences();
+            generateProceduralHearseAndGarage();
+        }
+
+        function sliceSpriteSheet(image, cols, rows, targetWidth, targetHeight, callback) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = image.width; tempCanvas.height = image.height;
+            const ctx = tempCanvas.getContext('2d');
+            ctx.drawImage(image, 0, 0);
+
+            const cellW = image.width / cols;
+            const cellH = image.height / rows;
+            const slicedSprites = [];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const spriteCvs = createPixelCanvas(targetWidth, targetHeight, (sCtx) => {
+                        sCtx.drawImage(tempCanvas, c * cellW, r * cellH, cellW, cellH, 0, 0, targetWidth, targetHeight);
+                    });
+                    slicedSprites.push(spriteCvs);
+                }
+            }
+            callback(slicedSprites);
+        }
+
+        // ===================================================================
+        // 2.5 DYNAMIC SPRITE LOADER FROM PROJECT FOLDER `pic/`
+        // ===================================================================
+        function getFileBaseName(filePathOrName) {
+            const clean = decodeURIComponent(filePathOrName.split('?')[0].split('#')[0]);
+            const fileName = clean.split('/').pop().split('\\').pop();
+            const dotIndex = fileName.lastIndexOf('.');
+            return dotIndex > 0 ? fileName.slice(0, dotIndex) : fileName;
+        }
+
+        function isSupportedImageFile(fileName) {
+            const ext = fileName.split('?')[0].split('.').pop()?.toLowerCase() || '';
+            return SUPPORTED_IMAGE_EXTENSIONS.includes(ext);
+        }
+
+        function loadSingleGraveSpriteFromSource(srcUrl, displayName, uniqueKey) {
+            return new Promise((resolve) => {
+                if (Sprites.customGraveSources.has(uniqueKey)) {
+                    resolve(false);
+                    return;
+                }
+
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = () => {
+                    if (!img.width || !img.height) {
+                        console.warn(`[pic-loader] Пропущен пустой или повреждённый файл: "${displayName}"`);
+                        resolve(false);
+                        return;
+                    }
+                    const spriteCvs = createPixelCanvas(64, 80, (sCtx) => {
+                        // Сохраняем пропорции спрайта и выравниваем по нижней центральной точке тайла
+                        const scale = Math.min(64 / img.width, 80 / img.height);
+                        const dw = Math.round(img.width * scale);
+                        const dh = Math.round(img.height * scale);
+                        const dx = Math.round((64 - dw) / 2);
+                        const dy = Math.round(80 - dh);
+                        sCtx.drawImage(img, dx, dy, dw, dh);
+                    });
+
+                    Sprites.customGraveSources.add(uniqueKey);
+                    Sprites.graves.push(spriteCvs);
+                    Sprites.graveNames.push(displayName);
+                    TombstonePrices.push(1500);
+                    resolve(true);
+                };
+                img.onerror = () => {
+                    console.warn(`[pic-loader] Некорректный или недоступный файл спрайта в pic/: "${displayName}" (${srcUrl})`);
+                    resolve(false);
+                };
+                img.src = srcUrl;
+            });
+        }
+
+        // Сканирует папку `pic/` через HTTP-листинг / манифест `pic/manifest.json` и/или File System Access API
+        async function scanPicFolderSprites(notifyOnNew = false) {
+            let addedCount = 0;
+
+            // Способ 1: Нативный File System Access API (если пользователь/админ привязал локальную папку `pic/`)
+            if (picDirectoryHandle) {
+                try {
+                    for await (const [entryName, handle] of picDirectoryHandle.entries()) {
+                        if (handle.kind !== 'file') continue;
+                        if (!isSupportedImageFile(entryName)) {
+                            console.warn(`[pic-loader] Неподдерживаемый формат файла в pic/: "${entryName}". Поддерживаются: ${SUPPORTED_IMAGE_EXTENSIONS.join(', ').toUpperCase()}`);
+                            continue;
+                        }
+                        const file = await handle.getFile();
+                        const uniqueKey = `fs:${entryName}:${file.lastModified}`;
+                        const objectUrl = URL.createObjectURL(file);
+                        const loaded = await loadSingleGraveSpriteFromSource(objectUrl, getFileBaseName(entryName), uniqueKey);
+                        if (loaded) addedCount++;
+                        else URL.revokeObjectURL(objectUrl);
+                    }
+                } catch (err) {
+                    console.warn('[pic-loader] Ошибка чтения привязанной папки pic/:', err);
+                }
+            }
+
+            // Способ 2: Автоматический HTTP-скан папки `./pic/` (индекс директории dev-сервера или `./pic/manifest.json`)
+            const candidateFiles = new Set();
+            try {
+                const dirRes = await fetch(PIC_FOLDER_PATH, { cache: 'no-store' });
+                if (dirRes.ok) {
+                    const contentType = dirRes.headers.get('content-type') || '';
+                    if (contentType.includes('application/json')) {
+                        const jsonList = await dirRes.json();
+                        if (Array.isArray(jsonList)) jsonList.forEach(f => candidateFiles.add(String(f)));
+                    } else {
+                        const html = await dirRes.text();
+                        const doc = new DOMParser().parseFromString(html, 'text/html');
+                        doc.querySelectorAll('a[href]').forEach(a => {
+                            const href = a.getAttribute('href') || '';
+                            if (!href || href.startsWith('?') || href.startsWith('#') || href.endsWith('/')) return;
+                            candidateFiles.add(href.split('/').pop());
+                        });
+                    }
+                }
+            } catch (_) {
+                // Игнорируем в file:// окружении
+            }
+
+            try {
+                const manifestRes = await fetch(`${PIC_FOLDER_PATH}manifest.json`, { cache: 'no-store' });
+                if (manifestRes.ok) {
+                    const files = await manifestRes.json();
+                    if (Array.isArray(files)) files.forEach(f => candidateFiles.add(String(f)));
+                }
+            } catch (_) {
+                // Манифест опционален
+            }
+
+            for (const rawFile of candidateFiles) {
+                const cleanName = decodeURIComponent(rawFile.split('?')[0]);
+                if (!isSupportedImageFile(cleanName)) {
+                    console.warn(`[pic-loader] Пропущен файл неподдерживаемого формата в pic/: "${cleanName}"`);
+                    continue;
+                }
+                const fullUrl = `${PIC_FOLDER_PATH}${encodeURIComponent(cleanName)}`;
+                const loaded = await loadSingleGraveSpriteFromSource(fullUrl, getFileBaseName(cleanName), `http:${cleanName}`);
+                if (loaded) addedCount++;
+            }
+
+            if (addedCount > 0) {
+                if (editorMode && selectedCategory === 'graves') renderEditorPalette();
+                if (!document.getElementById('burial-modal')?.classList.contains('hidden')) openBurialModal();
+                if (notifyOnNew) showToast(`Загружено новых спрайтов из pic/: ${addedCount}`, 'emerald');
+            }
+            return addedCount;
+        }
+
+        async function bindLocalPicFolder() {
+            if (!window.showDirectoryPicker) {
+                showToast('Ваш браузер не поддерживает прямой доступ к локальным папкам (File System Access API). Используйте локальный сервер с автоиндексом папки pic/.', 'amber');
+                return;
+            }
+            try {
+                picDirectoryHandle = await window.showDirectoryPicker({ mode: 'read' });
+                const count = await scanPicFolderSprites(false);
+                renderEditorPalette();
+                showToast(`Папка "${picDirectoryHandle.name}" подключена. Найдено спрайтов: ${count}.`, 'emerald');
+            } catch (err) {
+                if (err?.name !== 'AbortError') {
+                    console.warn('[pic-loader] Не удалось подключить папку pic:', err);
+                }
+            }
+        }
+
+        // ===================================================================
+        // 3. SOUND SYNTHESIZER ENGINE (Web Audio API)
+        // ===================================================================
+        let audioCtx = null;
+        let windGain = { gain: { setTargetAtTime: () => {} } };
+        let isAudioPlaying = false;
+
+        function initAudioEngine() {
+            if (audioCtx) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                audioCtx = new AudioContext();
+
+                const bufferSize = audioCtx.sampleRate * 2;
+                const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) output[i] = (Math.random() * 2 - 1) * 0.05;
+
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = noiseBuffer; whiteNoise.loop = true;
+
+                const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 300;
+                const realWindGain = audioCtx.createGain(); realWindGain.gain.value = 0.0;
+
+                whiteNoise.connect(filter); filter.connect(realWindGain); realWindGain.connect(audioCtx.destination);
+                whiteNoise.start();
+                windGain = realWindGain;
+            } catch (err) {
+                console.warn('Аудиодвижок недоступен:', err);
+            }
+        }
+
+        function playChurchBellChime() {
+            if (!audioCtx || !isAudioPlaying) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sine'; osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(110, audioCtx.currentTime + 3.0);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 4.0);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 4.0);
+        }
+
+        function playShovelSound() {
+            if (!audioCtx || !isAudioPlaying) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(130, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(45, audioCtx.currentTime + 0.35);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.35);
+        }
+
+        function playPaymentChime() {
+            if (!audioCtx || !isAudioPlaying) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+            osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.12); // E5
+            osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.24); // G5
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playClickSound() {
+            if (!audioCtx || !isAudioPlaying) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.08);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        }
+
+        // ===================================================================
+        // 4. CANVAS RENDERER & ROAD-CONSTRAINED HEARSE PATHFINDING
+        // ===================================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            const container = document.getElementById('viewport-container');
+            const w = window.innerWidth || (container && container.clientWidth) || 800;
+            const h = window.innerHeight || (container && container.clientHeight) || 600;
+            canvas.width = Math.max(1, w);
+            canvas.height = Math.max(1, h);
+            ctx.imageSmoothingEnabled = false;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function gridToScreen(gx, gy) {
+            const isoX = (gx - gy) * (TILE_WIDTH / 2);
+            const isoY = (gx + gy) * (TILE_HEIGHT / 2);
+            return {
+                x: canvas.width / 2 + (isoX + camera.x) * camera.zoom,
+                y: canvas.height / 4 + (isoY + camera.y) * camera.zoom
+            };
+        }
+
+        function screenToGrid(sx, sy) {
+            const relX = (sx - canvas.width / 2) / camera.zoom - camera.x;
+            const relY = (sy - canvas.height / 4) / camera.zoom - camera.y;
+            const gx = Math.floor((relX / (TILE_WIDTH / 2) + relY / (TILE_HEIGHT / 2)) / 2);
+            const gy = Math.floor((relY / (TILE_HEIGHT / 2) - relX / (TILE_WIDTH / 2)) / 2);
+            return { gx, gy };
+        }
+
+        let ritualDustParticles = [];
+
+        function render() {
+            if (canvas.width <= 0 || canvas.height <= 0) {
+                resizeCanvas();
+                if (canvas.width <= 0 || canvas.height <= 0) {
+                    requestAnimationFrame(render);
+                    return;
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.imageSmoothingEnabled = false;
+
+            if (timeOfDay === 'twilight') ctx.fillStyle = '#0b0e14';
+            else if (timeOfDay === 'night') ctx.fillStyle = '#040508';
+            else ctx.fillStyle = '#10161d';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Render Terrain Tiles
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const pos = gridToScreen(x, y);
+                    if (pos.x < -100 || pos.x > canvas.width + 100 || pos.y < -100 || pos.y > canvas.height + 100) continue;
+
+                    const cell = gridMap[x][y];
+                    const tileSprite = Sprites.tiles[cell.tile % Sprites.tiles.length];
+
+                    if (tileSprite) {
+                        const tw = TILE_WIDTH * camera.zoom;
+                        const th = TILE_HEIGHT * camera.zoom;
+                        ctx.drawImage(tileSprite, pos.x - tw / 2, pos.y, tw, th);
+                    }
+                }
+            }
+
+            // 2. Render Garage, Objects, Tombstones & Initials Badge ("A + B")
+            const renderQueue = [];
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const obj = gridMap[x][y].object;
+                    if (obj) renderQueue.push({ type: 'object', gx: x, gy: y, sortY: x + y, data: obj });
+                }
+            }
+
+            // MORGUE Garage at (17, 1)
+            renderQueue.push({ type: 'garage', gx: 17, gy: 1, sortY: 17 + 1 + 0.1 });
+
+            // Hearse Car
+            renderQueue.push({ type: 'hearse', gx: hearse.gridX, gy: hearse.gridY, sortY: hearse.gridX + hearse.gridY + 0.15 });
+
+            renderQueue.sort((a, b) => a.sortY - b.sortY);
+
+            renderQueue.forEach(item => {
+                const pos = gridToScreen(item.gx, item.gy);
+
+                if (item.type === 'garage') {
+                    if (Sprites.garage) {
+                        const gw = Sprites.garage.width * camera.zoom * 0.9;
+                        const gh = Sprites.garage.height * camera.zoom * 0.9;
+                        ctx.drawImage(Sprites.garage, pos.x - gw / 2, pos.y - gh + 20 * camera.zoom, gw, gh);
+                    }
+                } else if (item.type === 'object') {
+                    const obj = item.data;
+                    let spriteList = Sprites[obj.cat] || [];
+                    let sprite = spriteList[obj.index % spriteList.length];
+
+                    if (sprite) {
+                        const sw = sprite.width * camera.zoom * 0.8;
+                        const sh = sprite.height * camera.zoom * 0.8;
+                        // Center object horizontally and anchor its base to the isometric tile center
+                        const tileCenterY = pos.y + (TILE_HEIGHT / 2) * camera.zoom;
+                        const drawX = pos.x - sw / 2;
+                        const drawY = tileCenterY - sh + (4 * camera.zoom);
+
+                        ctx.drawImage(sprite, drawX, drawY, sw, sh);
+
+                        // Render Pair Initials Badge ("А + Б") on Tombstones
+                        if (obj.cat === 'graves' && (obj.p1 || obj.p2)) {
+                            const badgeW = sw * 0.64;
+                            const badgeH = Math.max(12, 13 * camera.zoom);
+                            const badgeX = pos.x - badgeW / 2;
+                            const badgeY = tileCenterY - badgeH * 0.65;
+
+                            ctx.fillStyle = '#0f131a';
+                            ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+                            ctx.strokeStyle = '#883449'; ctx.lineWidth = 1;
+                            ctx.strokeRect(badgeX, badgeY, badgeW, badgeH);
+
+                            ctx.fillStyle = '#f43f5e';
+                            ctx.font = `bold ${Math.max(8, Math.floor(9.5 * camera.zoom))}px Press Start 2P, cursive`;
+                            ctx.textAlign = 'center';
+                            ctx.fillText(`${obj.p1 || 'A'} + ${obj.p2 || 'Б'}`, pos.x, badgeY + badgeH - Math.max(3, 3.5 * camera.zoom));
+                            ctx.textAlign = 'left';
+                        }
+                    }
+                } else if (item.type === 'hearse') {
+                    if (Sprites.pallbearers) {
+                        const hw = Sprites.pallbearers.width * camera.zoom * 0.85;
+                        const hh = Sprites.pallbearers.height * camera.zoom * 0.85;
+                        const stepBob = hearse.isAutomated ? Math.abs(Math.sin(hearse.walkPhase)) * -1.5 * camera.zoom : 0;
+
+                        ctx.save();
+                        ctx.translate(pos.x, pos.y - 10 * camera.zoom + stepBob);
+                        ctx.rotate(hearse.angle);
+                        ctx.drawImage(Sprites.pallbearers, -hw / 2, -hh / 2, hw, hh);
+                        ctx.restore();
+
+                        hearse.worldX = pos.x; hearse.worldY = pos.y;
+                    }
+                }
+            });
+
+            // 3. Burial Dust Particles
+            if (ritualDustParticles.length > 0) {
+                for (let i = ritualDustParticles.length - 1; i >= 0; i--) {
+                    const p = ritualDustParticles[i];
+                    p.x += p.vx; p.y += p.vy; p.alpha -= 0.02;
+                    if (p.alpha <= 0) { ritualDustParticles.splice(i, 1); continue; }
+                    ctx.fillStyle = `rgba(180, 140, 100, ${p.alpha})`;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * camera.zoom, 0, Math.PI * 2); ctx.fill();
+                }
+            }
+
+            // 4. Lighting & Spotlight Layer
+            drawLightingLayer();
+
+            // 5. Grid Cell Hover Highlight
+            const mouseGrid = screenToGrid(mousePos.x, mousePos.y);
+            if (mouseGrid.gx >= 0 && mouseGrid.gx < MAP_SIZE && mouseGrid.gy >= 0 && mouseGrid.gy < MAP_SIZE) {
+                const hPos = gridToScreen(mouseGrid.gx, mouseGrid.gy);
+                ctx.strokeStyle = editorMode ? '#fbbf24' : '#f43f5e';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(hPos.x, hPos.y);
+                ctx.lineTo(hPos.x + (TILE_WIDTH / 2) * camera.zoom, hPos.y + (TILE_HEIGHT / 2) * camera.zoom);
+                ctx.lineTo(hPos.x, hPos.y + TILE_HEIGHT * camera.zoom);
+                ctx.lineTo(hPos.x - (TILE_WIDTH / 2) * camera.zoom, hPos.y + (TILE_HEIGHT / 2) * camera.zoom);
+                ctx.closePath(); ctx.stroke();
+            }
+
+            // Update Hearse Pathfinding Movement Logic
+            updateHearsePathfindingLogic();
+
+            requestAnimationFrame(render);
+        }
+
+        // HEARSE SMART ROUTING LOGIC: Moves strictly along road tiles, then turns perpendicular onto grave tile
+        function updateHearsePathfindingLogic() {
+            if (!hearse.isAutomated) return;
+
+            hearse.walkPhase += 0.28;
+            const moveSpeed = 0.08;
+
+            if (hearse.missionState === 'driving_to_perp') {
+                // Step 1: Drive along road (column 17) to perpendicular road tile (17, targetGraveY)
+                const dx = hearse.perpRoadX - hearse.gridX;
+                const dy = hearse.perpRoadY - hearse.gridY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 0.15) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    hearse.angle = targetAngle;
+                    hearse.gridX += Math.cos(targetAngle) * moveSpeed;
+                    hearse.gridY += Math.sin(targetAngle) * moveSpeed;
+                } else {
+                    // Reached the perpendicular road tile! Now turn 90 degrees onto grass towards target grave.
+                    hearse.gridX = hearse.perpRoadX;
+                    hearse.gridY = hearse.perpRoadY;
+                    hearse.missionState = 'driving_to_grave';
+                }
+            } else if (hearse.missionState === 'driving_to_grave') {
+                // Step 2: Move perpendicular from road tile (17, Y) directly to grave plot (X, Y)
+                const dx = hearse.targetGraveX - hearse.gridX;
+                const dy = hearse.targetGraveY - hearse.gridY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 0.15) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    hearse.angle = targetAngle;
+                    hearse.gridX += Math.cos(targetAngle) * moveSpeed;
+                    hearse.gridY += Math.sin(targetAngle) * moveSpeed;
+                } else {
+                    // Arrived at burial site -> Begin ceremony
+                    hearse.gridX = hearse.targetGraveX;
+                    hearse.gridY = hearse.targetGraveY;
+                    hearse.missionState = 'burying';
+                    hearse.burialTimer = Date.now();
+
+                    showToast("Процессия из шести носильщиков прибыла. Начат ритуал захоронения!", "amber");
+                    playChurchBellChime(); playShovelSound();
+
+                    // Particles
+                    const pPos = gridToScreen(hearse.targetGraveX, hearse.targetGraveY);
+                    for (let k = 0; k < 35; k++) {
+                        ritualDustParticles.push({
+                            x: pPos.x, y: pPos.y,
+                            vx: (Math.random() - 0.5) * 3, vy: -Math.random() * 2 - 1,
+                            size: Math.random() * 4 + 2, alpha: 0.95
+                        });
+                    }
+                }
+            } else if (hearse.missionState === 'burying') {
+                if (Date.now() - hearse.burialTimer > 2800) {
+                    // Place Final Tombstone
+                    const tX = hearse.targetGraveX, tY = hearse.targetGraveY;
+                    gridMap[tX][tY].tile = 0; // Restore grass
+                    gridMap[tX][tY].object = hearse.pendingBurialData;
+
+                    saveCemeteryToLocalStorage();
+                    showToast("Гроб опущен, памятник установлен. Носильщики возвращаются...", "rose");
+                    playChurchBellChime();
+
+                    hearse.missionState = 'returning_to_road';
+                }
+            } else if (hearse.missionState === 'returning_to_road') {
+                // Step 3: Back out perpendicular from grave plot back onto road tile (17, Y)
+                const dx = hearse.perpRoadX - hearse.gridX;
+                const dy = hearse.perpRoadY - hearse.gridY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 0.15) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    hearse.angle = targetAngle;
+                    hearse.gridX += Math.cos(targetAngle) * moveSpeed;
+                    hearse.gridY += Math.sin(targetAngle) * moveSpeed;
+                } else {
+                    hearse.gridX = hearse.perpRoadX;
+                    hearse.gridY = hearse.perpRoadY;
+                    hearse.missionState = 'driving_home';
+                }
+            } else if (hearse.missionState === 'driving_home') {
+                // Step 4: Drive strictly along road column 17 back to garage (17, 1)
+                const dx = hearse.homeX - hearse.gridX;
+                const dy = hearse.homeY - hearse.gridY;
+                const dist = Math.hypot(dx, dy);
+
+                if (dist > 0.15) {
+                    const targetAngle = Math.atan2(dy, dx);
+                    hearse.angle = targetAngle;
+                    hearse.gridX += Math.cos(targetAngle) * moveSpeed;
+                    hearse.gridY += Math.sin(targetAngle) * moveSpeed;
+                } else {
+                    // Parked in garage!
+                    hearse.gridX = hearse.homeX;
+                    hearse.gridY = hearse.homeY;
+                    hearse.angle = Math.PI / 2;
+                    hearse.isAutomated = false;
+                    hearse.missionState = 'idle';
+                    showToast("Процессия носильщиков вернулась на базу.", "emerald");
+                }
+            }
+        }
+
+        function drawLightingLayer() {
+            if (canvas.width <= 0 || canvas.height <= 0) return;
+
+            const lightCanvas = document.createElement('canvas');
+            lightCanvas.width = canvas.width; lightCanvas.height = canvas.height;
+            const lCtx = lightCanvas.getContext('2d');
+
+            if (timeOfDay === 'twilight') lCtx.fillStyle = 'rgba(15, 20, 32, 0.55)';
+            else if (timeOfDay === 'night') lCtx.fillStyle = 'rgba(5, 7, 12, 0.85)';
+            else lCtx.fillStyle = 'rgba(25, 35, 45, 0.40)';
+            lCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            lCtx.globalCompositeOperation = 'destination-out';
+
+            // Street lamps illumination
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const obj = gridMap[x][y].object;
+                    if (obj && obj.isLamp) {
+                        const lPos = gridToScreen(x, y);
+                        const flick = Math.sin(Date.now() * 0.008 + x * y) * 4;
+                        const rad = (110 + flick) * camera.zoom;
+
+                        const grad = lCtx.createRadialGradient(lPos.x, lPos.y - 40 * camera.zoom, 5, lPos.x, lPos.y - 40 * camera.zoom, rad);
+                        grad.addColorStop(0, 'rgba(255, 220, 130, 0.9)');
+                        grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        lCtx.fillStyle = grad;
+                        lCtx.beginPath(); lCtx.arc(lPos.x, lPos.y - 40 * camera.zoom, rad, 0, Math.PI * 2); lCtx.fill();
+                    }
+                }
+            }
+
+            // Hearse Headlights Beam
+            if (hearse.lightsOn && hearse.worldX) {
+                const headX = hearse.worldX;
+                const headY = hearse.worldY - 10 * camera.zoom;
+                const beamLength = 220 * camera.zoom;
+                const beamAngle = hearse.angle;
+
+                const grad = lCtx.createRadialGradient(headX, headY, 10, headX, headY, beamLength);
+                grad.addColorStop(0, 'rgba(255, 250, 200, 0.95)');
+                grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                lCtx.fillStyle = grad;
+                lCtx.beginPath(); lCtx.moveTo(headX, headY);
+                lCtx.arc(headX, headY, beamLength, beamAngle - 0.4, beamAngle + 0.4);
+                lCtx.closePath(); lCtx.fill();
+            }
+
+            ctx.drawImage(lightCanvas, 0, 0);
+        }
+
+        // ===================================================================
+        // 5. INTERACTION & AUTH SYSTEM LOGIC
+        // ===================================================================
+        const mousePos = { x: 0, y: 0 };
+        let activeMemorialTile = null;
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) {
+                camera.isDragging = true;
+                camera.startX = e.clientX - camera.x;
+                camera.startY = e.clientY - camera.y;
+            }
         });
+
+        window.addEventListener('mousemove', (e) => {
+            mousePos.x = e.clientX; mousePos.y = e.clientY;
+            if (camera.isDragging) {
+                camera.x = e.clientX - camera.startX;
+                camera.y = e.clientY - camera.startY;
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            const dragDist = Math.hypot(e.clientX - (camera.startX + camera.x), e.clientY - (camera.startY + camera.y));
+            camera.isDragging = false;
+            if (e.button === 0 && dragDist < 5) handleMapClick(e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('dblclick', (e) => {
+            if (e.button === 0) {
+                handleMapDoubleClick(e.clientX, e.clientY);
+            }
+        });
+
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+            camera.zoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, camera.zoom * zoomFactor));
+        }, { passive: false });
+
+        function handleMapClick(sx, sy) {
+            const { gx, gy } = screenToGrid(sx, sy);
+            if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
+
+            playClickSound();
+
+            if (editorMode) {
+                if (selectedTool === 'paint') {
+                    if (selectedCategory === 'tiles') gridMap[gx][gy].tile = selectedSpriteIndex;
+                    else {
+                        gridMap[gx][gy].object = {
+                            cat: selectedCategory, index: selectedSpriteIndex,
+                            candles: 0, flowers: 0, p1: "А", p2: "Б",
+                            name: "Пара «А + Б»", dates: "2023 — 2024",
+                            epitaph: "Здесь покоятся былые чувства.",
+                            isLamp: (selectedCategory === 'fences' && selectedSpriteIndex <= 1)
+                        };
+                    }
+                } else if (selectedTool === 'erase') gridMap[gx][gy].object = null;
+            } else {
+                const cell = gridMap[gx][gy];
+                if (cell.object && cell.object.cat === 'graves') {
+                    activeMemorialTile = cell;
+                    openMemorialModal(cell.object);
+                }
+            }
+        }
+
+        function handleMapDoubleClick(sx, sy) {
+            if (editorMode) return;
+            const { gx, gy } = screenToGrid(sx, sy);
+            if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
+
+            const cell = gridMap[gx][gy];
+            if (!cell.object && cell.tile !== 2 && cell.tile !== 3) {
+                playClickSound();
+                if (!currentUser) {
+                    showToast("Сначала войдите в аккаунт для заказа захоронения!", "amber");
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                    return;
+                }
+                pendingBurialCell = { gx, gy };
+                openBurialModal();
+            }
+        }
+
+        // AUTH SYSTEM LOGIC
+        document.getElementById('btn-open-auth').onclick = () => {
+            document.getElementById('auth-modal').classList.remove('hidden');
+        };
+        document.getElementById('close-auth-btn').onclick = () => {
+            document.getElementById('auth-modal').classList.add('hidden');
+        };
+
+        document.getElementById('tab-login').onclick = () => {
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('form-register').classList.add('hidden');
+            document.getElementById('tab-login').className = "flex-1 py-1.5 font-bold text-rose-400 border-b-2 border-rose-600";
+            document.getElementById('tab-register').className = "flex-1 py-1.5 font-bold text-stone-500 border-b-2 border-transparent hover:text-stone-300";
+        };
+        document.getElementById('tab-register').onclick = () => {
+            document.getElementById('form-register').classList.remove('hidden');
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('tab-register').className = "flex-1 py-1.5 font-bold text-emerald-400 border-b-2 border-emerald-600";
+            document.getElementById('tab-login').className = "flex-1 py-1.5 font-bold text-stone-500 border-b-2 border-transparent hover:text-stone-300";
+        };
+
+        document.getElementById('btn-fill-admin').onclick = () => {
+            document.getElementById('login-username').value = "admin";
+            document.getElementById('login-password').value = "";
+        };
+
+        document.getElementById('btn-quick-admin-start').onclick = () => {
+            performLogin("admin", true);
+        };
+
+        document.getElementById('form-login').onsubmit = (e) => {
+            e.preventDefault();
+            const u = document.getElementById('login-username').value.trim();
+            const p = document.getElementById('login-password').value.trim();
+            if (u === 'admin' && p === '') performLogin("admin", true);
+            else if (u.length > 0) performLogin(u, false);
+            else showToast("Введите имя пользователя!", "red");
+        };
+
+        document.getElementById('form-register').onsubmit = (e) => {
+            e.preventDefault();
+            const u = document.getElementById('reg-username').value.trim() || "Пользователь";
+            performLogin(u, false);
+        };
+
+        function performLogin(username, isAdmin) {
+            currentUser = { username, isAdmin };
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('auth-modal').classList.add('hidden');
+
+            const badge = document.getElementById('user-badge');
+            badge.innerText = isAdmin ? `User: ${username} [ADMIN]` : `User: ${username}`;
+            badge.className = isAdmin ? "px-2 py-0.5 rounded bg-amber-950 border border-amber-600 text-amber-300 font-bold text-xs" : "px-2 py-0.5 rounded bg-stone-900 border border-stone-700 text-stone-300 text-xs";
+
+            document.getElementById('btn-logout').classList.remove('hidden');
+            if (isAdmin) {
+                document.getElementById('btn-admin-panel').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-admin-panel').classList.add('hidden');
+                disableEditorMode();
+            }
+
+            showToast(`Добро пожаловать, ${username}!`, "emerald");
+            playPaymentChime();
+        }
+
+        function disableEditorMode() {
+            editorMode = false;
+            const panel = document.getElementById('editor-panel');
+            const text = document.getElementById('editor-mode-text');
+            if (panel) {
+                panel.classList.add('hidden');
+                panel.classList.remove('flex');
+            }
+            if (text) {
+                text.innerText = "Включить Редактор Кладбища";
+            }
+        }
+
+        document.getElementById('btn-logout').onclick = () => {
+            currentUser = null;
+            disableEditorMode();
+            document.getElementById('start-screen').classList.remove('hidden');
+            document.getElementById('btn-logout').classList.add('hidden');
+            document.getElementById('btn-admin-panel').classList.add('hidden');
+            if (isAudioPlaying && windGain && windGain.gain && audioCtx) {
+                windGain.gain.setTargetAtTime(0.08, audioCtx.currentTime, 0.5);
+            }
+        };
+
+        // ===================================================================
+        // 5.5 MODALS: BURIAL ORDER, YOOKASSA, MEMORIAL & ADMIN HANDLERS
+        // ===================================================================
+        const STORAGE_KEY_MAP = 'ex_love_cemetery_map_v1';
+
+        function showToast(message, color = 'stone') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+
+            const colorMap = {
+                amber: 'border-amber-600 bg-amber-950/95 text-amber-200',
+                rose: 'border-rose-600 bg-rose-950/95 text-rose-200',
+                emerald: 'border-emerald-600 bg-emerald-950/95 text-emerald-200',
+                red: 'border-red-600 bg-red-950/95 text-red-200',
+                stone: 'border-stone-600 bg-stone-900/95 text-stone-200'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `px-4 py-2.5 rounded-lg border text-xs font-mono shadow-xl transition-opacity duration-300 ${colorMap[color] || colorMap.stone}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        function setTimeOfDay(mode) {
+            timeOfDay = ['twilight', 'night', 'fog'].includes(mode) ? mode : 'twilight';
+        }
+
+        function updateClockBadge() {
+            const clockEl = document.getElementById('clock-status');
+            if (!clockEl) return;
+            const now = new Date();
+            clockEl.textContent = now.toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function updateWeatherBadge(locationLabel, tempC, conditionLabel, iconClass) {
+            const badgeText = document.getElementById('weather-status');
+            const badgeIcon = document.getElementById('weather-icon');
+            if (badgeText) {
+                const tempPart = (typeof tempC === 'number' && !Number.isNaN(tempC)) ? ` ${Math.round(tempC)}°C` : '';
+                badgeText.textContent = `${locationLabel}:${tempPart} ${conditionLabel}`.trim();
+            }
+            if (badgeIcon && iconClass) {
+                badgeIcon.className = `fa-solid ${iconClass}`;
+            }
+        }
+
+        async function fetchWeatherByCoords(lat, lon, cityLabel = 'Ваша локация') {
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(lat)}&longitude=${encodeURIComponent(lon)}&current=temperature_2m,weather_code,is_day&timezone=auto`;
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Weather API response not OK');
+                const data = await res.json();
+                const current = data && data.current ? data.current : null;
+                if (!current) throw new Error('Missing current weather data');
+
+                const isDay = current.is_day === 1 || current.is_day === true;
+                const mapped = mapWeatherCodeToAtmosphere(current.weather_code, isDay);
+                setTimeOfDay(mapped.mode);
+                updateWeatherBadge(cityLabel, current.temperature_2m, mapped.label, mapped.icon);
+            } catch (err) {
+                syncTimeWithSystemClock();
+                updateWeatherBadge(cityLabel, null, timeOfDay === 'fog' ? 'Туман' : (timeOfDay === 'night' ? 'Ночь' : 'Сумерки'), 'fa-location-dot text-rose-400');
+            }
+        }
+
+        async function syncWeatherWithUserLocation() {
+            syncTimeWithSystemClock();
+            updateWeatherBadge('Локация', null, 'определение...', 'fa-location-crosshairs text-amber-300');
+
+            // Try browser Geolocation first
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, 'Локация');
+                    },
+                    async () => {
+                        // Fallback to IP geolocation if permission denied/unavailable
+                        try {
+                            const ipRes = await fetch('https://ipapi.co/json/');
+                            if (ipRes.ok) {
+                                const ipData = await ipRes.json();
+                                if (typeof ipData.latitude === 'number' && typeof ipData.longitude === 'number') {
+                                    const placeName = ipData.city || 'Локация';
+                                    await fetchWeatherByCoords(ipData.latitude, ipData.longitude, placeName);
+                                    return;
+                                }
+                            }
+                        } catch (_) {}
+                        updateWeatherBadge('Локация', null, timeOfDay === 'night' ? 'Ночь' : (timeOfDay === 'fog' ? 'Туман' : 'Сумерки'), 'fa-location-dot text-stone-400');
+                    },
+                    { timeout: 6000, maximumAge: 600000 }
+                );
+            }
+        }
+
+        function syncTimeWithSystemClock() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 9) {
+                setTimeOfDay('fog');
+            } else if (hour >= 9 && hour < 20) {
+                setTimeOfDay('twilight');
+            } else {
+                setTimeOfDay('night');
+            }
+        }
+
+        function saveCemeteryToLocalStorage() {
+            try {
+                const serialized = gridMap.map(col =>
+                    col.map(cell => ({
+                        tile: cell.tile,
+                        object: cell.object ? { ...cell.object } : null
+                    }))
+                );
+                localStorage.setItem(STORAGE_KEY_MAP, JSON.stringify({
+                    grid: serialized,
+                    balance: userBalance
+                }));
+            } catch (err) {
+                console.warn('Не удалось сохранить состояние кладбища:', err);
+            }
+        }
+
+        function loadCemeteryFromLocalStorage() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY_MAP);
+                if (!raw) return;
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed.grid) && parsed.grid.length === MAP_SIZE) {
+                    for (let x = 0; x < MAP_SIZE; x++) {
+                        if (!Array.isArray(parsed.grid[x]) || parsed.grid[x].length !== MAP_SIZE) continue;
+                        for (let y = 0; y < MAP_SIZE; y++) {
+                            const savedCell = parsed.grid[x][y];
+                            if (savedCell && typeof savedCell.tile === 'number') {
+                                gridMap[x][y].tile = savedCell.tile;
+                                gridMap[x][y].object = savedCell.object || null;
+                            }
+                        }
+                    }
+                }
+                if (typeof parsed.balance === 'number') {
+                    userBalance = parsed.balance;
+                    const balEl = document.getElementById('user-balance');
+                    if (balEl) balEl.innerText = `${userBalance.toLocaleString()} ₽`;
+                }
+            } catch (err) {
+                console.warn('Не удалось загрузить сохранение кладбища:', err);
+            }
+        }
+
+        function renderAdminGravesList() {
+            const listEl = document.getElementById('admin-graves-list');
+            if (!listEl) return;
+            listEl.innerHTML = '';
+
+            const graves = [];
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    const obj = gridMap[x][y].object;
+                    if (obj && obj.cat === 'graves') {
+                        graves.push({ x, y, obj });
+                    }
+                }
+            }
+
+            if (graves.length === 0) {
+                listEl.innerHTML = '<div class="text-stone-500 py-2 text-center">Захоронений пока нет.</div>';
+                return;
+            }
+
+            graves.forEach(({ x, y, obj }) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between bg-stone-900/90 border border-stone-800 rounded px-2.5 py-1.5';
+                row.innerHTML = `
+                    <span><b class="text-rose-400">[${x}, ${y}]</b> ${obj.name || `${obj.p1 || 'А'} + ${obj.p2 || 'Б'}`} — <span class="text-stone-400 italic">"${obj.epitaph || ''}"</span></span>
+                    <button class="text-red-400 hover:text-red-300 px-2 py-0.5 rounded bg-red-950/60 border border-red-900" title="Удалить могилу"><i class="fa-solid fa-trash"></i></button>
+                `;
+                row.querySelector('button').onclick = () => {
+                    gridMap[x][y].object = null;
+                    saveCemeteryToLocalStorage();
+                    renderAdminGravesList();
+                    showToast(`Захоронение [${x}, ${y}] удалено.`, 'amber');
+                };
+                listEl.appendChild(row);
+            });
+        }
+
+        function renderEditorPalette() {
+            const container = document.getElementById('palette-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            document.querySelectorAll('.editor-tab').forEach(tab => {
+                const isActive = tab.getAttribute('data-cat') === selectedCategory;
+                tab.className = isActive
+                    ? 'editor-tab px-3 py-1 rounded bg-rose-950 text-rose-200 border border-rose-800'
+                    : 'editor-tab px-3 py-1 rounded bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-700';
+            });
+
+            // Обновляем счётчик на вкладке «Надгробия» актуальным количеством (включая файлы из pic/)
+            const gravesTab = document.querySelector('.editor-tab[data-cat="graves"]');
+            if (gravesTab) {
+                gravesTab.textContent = `Надгробия (${Sprites.graves.length})`;
+            }
+
+            // Для вкладки «Надгробия» добавляем кнопки обновления и привязки локальной папки `pic/`
+            if (selectedCategory === 'graves') {
+                const syncWrap = document.createElement('div');
+                syncWrap.className = 'shrink-0 flex flex-col gap-1 pr-1';
+
+                const refreshBtn = document.createElement('button');
+                refreshBtn.className = 'px-2 py-1 rounded border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-200 text-[10px] font-mono flex items-center gap-1';
+                refreshBtn.title = 'Пересканировать папку pic/';
+                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Скан pic/';
+                refreshBtn.onclick = async () => {
+                    const added = await scanPicFolderSprites(true);
+                    if (added === 0) showToast('Новых файлов в папке pic/ не обнаружено.', 'stone');
+                    renderEditorPalette();
+                };
+
+                const bindBtn = document.createElement('button');
+                bindBtn.className = 'px-2 py-1 rounded border border-amber-700 bg-amber-950/70 hover:bg-amber-900 text-amber-200 text-[10px] font-mono flex items-center gap-1';
+                bindBtn.title = 'Выбрать папку pic/ с диска для отслеживания новых файлов без перезапуска';
+                bindBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Папка pic/';
+                bindBtn.onclick = () => bindLocalPicFolder();
+
+                syncWrap.appendChild(refreshBtn);
+                syncWrap.appendChild(bindBtn);
+                container.appendChild(syncWrap);
+            }
+
+            const list = Sprites[selectedCategory] || [];
+            list.forEach((sprite, idx) => {
+                const btn = document.createElement('button');
+                const active = selectedSpriteIndex === idx && selectedTool === 'paint';
+                const label = (selectedCategory === 'graves' && Sprites.graveNames[idx]) ? Sprites.graveNames[idx] : `#${idx + 1}`;
+                btn.title = label;
+                btn.className = `shrink-0 w-16 h-16 px-1 rounded border flex flex-col items-center justify-center bg-stone-900 ${active ? 'border-amber-400 bg-amber-950/30' : 'border-stone-800 hover:border-stone-600'}`;
+                const img = document.createElement('img');
+                img.src = sprite.toDataURL();
+                img.className = 'w-10 h-10 object-contain pixelated';
+                btn.appendChild(img);
+
+                if (selectedCategory === 'graves') {
+                    const caption = document.createElement('span');
+                    caption.className = 'w-full truncate text-[9px] font-mono text-stone-300 mt-0.5 text-center';
+                    caption.textContent = label;
+                    btn.appendChild(caption);
+                }
+
+                btn.onclick = () => {
+                    selectedSpriteIndex = idx;
+                    selectedTool = 'paint';
+                    document.getElementById('tool-paint')?.classList.add('bg-stone-700', 'text-stone-100');
+                    document.getElementById('tool-erase')?.classList.remove('bg-stone-700', 'text-stone-100');
+                    renderEditorPalette();
+                };
+                container.appendChild(btn);
+            });
+        }
+
+        // Time-of-day, Audio & Admin Controls
+        document.getElementById('audio-toggle').onclick = () => {
+            initAudioEngine();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+            isAudioPlaying = !isAudioPlaying;
+            const icon = document.getElementById('audio-icon');
+            const text = document.getElementById('audio-text');
+            const currentTime = audioCtx ? audioCtx.currentTime : 0;
+            if (isAudioPlaying) {
+                windGain?.gain?.setTargetAtTime(0.08, currentTime, 0.3);
+                icon.className = 'fa-solid fa-volume-high text-emerald-400';
+                text.innerText = 'Звук Вкл';
+            } else {
+                windGain?.gain?.setTargetAtTime(0.0, currentTime, 0.3);
+                icon.className = 'fa-solid fa-volume-xmark text-red-400';
+                text.innerText = 'Звук';
+            }
+        };
+
+        document.getElementById('editor-toggle-btn').onclick = async () => {
+            if (!currentUser || !currentUser.isAdmin) {
+                showToast('Редактор доступен только администратору.', 'red');
+                return;
+            }
+            editorMode = !editorMode;
+            const panel = document.getElementById('editor-panel');
+            const modeText = document.getElementById('editor-mode-text');
+            if (editorMode) {
+                panel.classList.remove('hidden');
+                panel.classList.add('flex');
+                modeText.innerText = 'Выключить Редактор Кладбища';
+                document.getElementById('admin-modal').classList.add('hidden');
+                await scanPicFolderSprites(true);
+                renderEditorPalette();
+            } else {
+                disableEditorMode();
+            }
+            playClickSound();
+        };
+
+        document.querySelectorAll('.editor-tab').forEach(tab => {
+            tab.onclick = async () => {
+                selectedCategory = tab.getAttribute('data-cat');
+                selectedSpriteIndex = 0;
+                if (selectedCategory === 'graves') {
+                    await scanPicFolderSprites(true);
+                }
+                renderEditorPalette();
+                playClickSound();
+            };
+        });
+
+        document.getElementById('tool-paint').onclick = () => {
+            selectedTool = 'paint';
+            renderEditorPalette();
+        };
+
+        document.getElementById('tool-erase').onclick = () => {
+            selectedTool = 'erase';
+            renderEditorPalette();
+        };
+
+        document.getElementById('btn-admin-add-money').onclick = () => {
+            userBalance += 50000;
+            document.getElementById('user-balance').innerText = `${userBalance.toLocaleString()} ₽`;
+            saveCemeteryToLocalStorage();
+            playPaymentChime();
+            showToast('Баланс пополнен на +50 000 ₽.', 'emerald');
+        };
+
+        document.getElementById('btn-admin-clear-graves').onclick = () => {
+            for (let x = 0; x < MAP_SIZE; x++) {
+                for (let y = 0; y < MAP_SIZE; y++) {
+                    if (gridMap[x][y].object && gridMap[x][y].object.cat === 'graves') {
+                        gridMap[x][y].object = null;
+                    }
+                }
+            }
+            saveCemeteryToLocalStorage();
+            renderAdminGravesList();
+            showToast('Все захоронения очищены.', 'amber');
+        };
+
+        function openBurialModal() {
+            const modal = document.getElementById('burial-modal');
+            const grid = document.getElementById('burial-tombstone-grid');
+            grid.innerHTML = '';
+
+            Sprites.graves.forEach((sprite, idx) => {
+                const price = TombstonePrices[idx] || 1500;
+                const graveTitle = Sprites.graveNames[idx] || `Памятник #${idx + 1}`;
+                const card = document.createElement('div');
+                card.title = graveTitle;
+                card.className = `p-1.5 rounded border cursor-pointer flex flex-col items-center justify-between bg-stone-900 transition-all ${selectedBurialTombstoneIndex === idx ? 'border-rose-500 bg-rose-950/30 scale-105' : 'border-stone-800 hover:border-stone-600'}`;
+                
+                const img = document.createElement('img');
+                img.src = sprite.toDataURL();
+                img.className = "w-10 h-12 object-contain pixelated";
+
+                const nameTag = document.createElement('span');
+                nameTag.className = "w-full truncate text-center text-[9px] font-mono text-stone-300 mt-1";
+                nameTag.innerText = graveTitle;
+                
+                const priceTag = document.createElement('span');
+                priceTag.className = "text-[10px] font-mono text-amber-400";
+                priceTag.innerText = `${price} ₽`;
+
+                card.appendChild(img);
+                card.appendChild(nameTag);
+                card.appendChild(priceTag);
+                card.onclick = () => {
+                    selectedBurialTombstoneIndex = idx;
+                    document.getElementById('burial-total-price').innerText = `${price.toLocaleString()} ₽`;
+                    openBurialModal();
+                    playClickSound();
+                };
+                grid.appendChild(card);
+            });
+
+            const currentPrice = TombstonePrices[selectedBurialTombstoneIndex] || 1500;
+            document.getElementById('burial-total-price').innerText = `${currentPrice.toLocaleString()} ₽`;
+
+            if (!document.getElementById('burial-epitaph-input').value.trim()) {
+                document.getElementById('burial-epitaph-input').value = GeneratedEpitaphs[0];
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('close-burial-btn').onclick = () => {
+            document.getElementById('burial-modal').classList.add('hidden');
+        };
+
+        document.querySelectorAll('.pair-preset').forEach(btn => {
+            btn.onclick = () => {
+                document.getElementById('initial-1').value = btn.getAttribute('data-p1');
+                document.getElementById('initial-2').value = btn.getAttribute('data-p2');
+                playClickSound();
+            };
+        });
+
+        document.getElementById('btn-generate-epitaph').onclick = () => {
+            const randomEp = GeneratedEpitaphs[Math.floor(Math.random() * GeneratedEpitaphs.length)];
+            document.getElementById('burial-epitaph-input').value = randomEp;
+            playClickSound();
+        };
+
+        document.getElementById('btn-proceed-to-payment').onclick = () => {
+            if (!pendingBurialCell) return;
+
+            const p1 = document.getElementById('initial-1').value.trim() || 'А';
+            const p2 = document.getElementById('initial-2').value.trim() || 'Б';
+            const epitaph = document.getElementById('burial-epitaph-input').value.trim() || GeneratedEpitaphs[0];
+            const amount = TombstonePrices[selectedBurialTombstoneIndex] || 1500;
+
+            pendingOrderData = {
+                gx: pendingBurialCell.gx,
+                gy: pendingBurialCell.gy,
+                p1,
+                p2,
+                epitaph,
+                tombstoneIndex: selectedBurialTombstoneIndex,
+                amount
+            };
+
+            document.getElementById('burial-modal').classList.add('hidden');
+            document.getElementById('yk-order-title').innerText = `Пара «${p1} + ${p2}»`;
+            document.getElementById('yk-order-amount').innerText = `${amount.toLocaleString()} ₽`;
+            document.getElementById('yookassa-modal').classList.remove('hidden');
+            playClickSound();
+        };
+
+        // YooKassa Widget Handlers
+        document.getElementById('close-yookassa-btn').onclick = () => {
+            document.getElementById('yookassa-modal').classList.add('hidden');
+        };
+
+        document.getElementById('yk-tab-card').onclick = () => {
+            document.getElementById('yk-form-card')?.classList.remove('hidden');
+            document.getElementById('yk-view-sbp').classList.add('hidden');
+            document.getElementById('yk-view-sbp').classList.remove('flex');
+            document.getElementById('yk-tab-card').className = "flex-1 py-2 rounded font-bold bg-stone-800 text-white border border-stone-600 flex items-center justify-center gap-2";
+            document.getElementById('yk-tab-sbp').className = "flex-1 py-2 rounded font-bold bg-stone-950 text-stone-400 hover:text-white flex items-center justify-center gap-2";
+        };
+
+        document.getElementById('yk-tab-sbp').onclick = () => {
+            document.getElementById('yk-form-card')?.classList.add('hidden');
+            document.getElementById('yk-view-sbp').classList.remove('hidden');
+            document.getElementById('yk-view-sbp').classList.add('flex');
+            document.getElementById('yk-tab-sbp').className = "flex-1 py-2 rounded font-bold bg-stone-800 text-white border border-stone-600 flex items-center justify-center gap-2";
+            document.getElementById('yk-tab-card').className = "flex-1 py-2 rounded font-bold bg-stone-950 text-stone-400 hover:text-white flex items-center justify-center gap-2";
+        };
+
+        function finalizeBurialPayment(isSandbox = false) {
+            if (!pendingOrderData) return;
+
+            if (!isSandbox) {
+                if (userBalance < pendingOrderData.amount) {
+                    showToast("Недостаточно средств на балансе! Пополните в Админ-панели.", "red");
+                    return;
+                }
+                userBalance -= pendingOrderData.amount;
+                document.getElementById('user-balance').innerText = `${userBalance.toLocaleString()} ₽`;
+            }
+
+            document.getElementById('yookassa-modal').classList.add('hidden');
+            playPaymentChime();
+
+            const { gx, gy, p1, p2, epitaph, tombstoneIndex } = pendingOrderData;
+
+            // Prepare freshly dug mound at target cell
+            gridMap[gx][gy].tile = 4;
+
+            // Dispatch Hearse along strict road coordinates (Column 17)
+            hearse.targetGraveX = gx;
+            hearse.targetGraveY = gy;
+            hearse.perpRoadX = 17;
+            hearse.perpRoadY = gy;
+            hearse.pendingBurialData = {
+                cat: 'graves',
+                index: tombstoneIndex,
+                candles: 1,
+                flowers: 0,
+                p1,
+                p2,
+                name: `Пара «${p1} + ${p2}»`,
+                dates: `${new Date().getFullYear()}`,
+                epitaph
+            };
+
+            hearse.isAutomated = true;
+            hearse.missionState = 'driving_to_perp';
+
+            showToast(`Оплата принята! Шесть носильщиков с гробом выдвинулись к участку [${gx}, ${gy}].`, "emerald");
+            pendingOrderData = null;
+        }
+
+        const ykCardForm = document.getElementById('yk-form-card');
+        if (ykCardForm) {
+            ykCardForm.onsubmit = (e) => {
+                e.preventDefault();
+                finalizeBurialPayment(false);
+            };
+        }
+
+        document.getElementById('btn-pay-sbp').onclick = () => finalizeBurialPayment(false);
+        document.getElementById('btn-pay-sandbox').onclick = () => finalizeBurialPayment(true);
+
+        // Memorial Modal Handlers
+        function getDeterministicOffset(seed, index, rangeX, rangeY) {
+            const hash = Math.abs(Math.sin((seed + 1) * 9301 + (index + 1) * 49297) * 233280) % 1;
+            const hash2 = Math.abs(Math.cos((seed + 1) * 4129 + (index + 1) * 19853) * 144269) % 1;
+            return {
+                x: (hash - 0.5) * 2 * rangeX,
+                y: (hash2 - 0.5) * 2 * rangeY
+            };
+        }
+
+        function renderDetailedMemorialArtwork(graveObj) {
+            const preview = document.getElementById('memorial-sprite-preview');
+            if (!preview) return;
+            preview.innerHTML = '';
+
+            // 10x larger pixel-art memorial canvas (~10x of base 24x32 sprite footprint)
+            const detailCanvas = document.createElement('canvas');
+            detailCanvas.width = 240;
+            detailCanvas.height = 320;
+            detailCanvas.className = 'w-full h-full object-contain pixelated';
+            const dCtx = detailCanvas.getContext('2d');
+            dCtx.imageSmoothingEnabled = false;
+
+            // Subtle moody ground & stone frame inside preview
+            dCtx.fillStyle = '#0c0f15';
+            dCtx.fillRect(0, 0, detailCanvas.width, detailCanvas.height);
+
+            // Ground patch at bottom center (scaled ~10x)
+            dCtx.fillStyle = '#1b241c';
+            dCtx.beginPath();
+            dCtx.ellipse(120, 272, 104, 34, 0, 0, Math.PI * 2);
+            dCtx.fill();
+
+            dCtx.fillStyle = '#262b36';
+            dCtx.beginPath();
+            dCtx.ellipse(120, 270, 78, 22, 0, 0, Math.PI * 2);
+            dCtx.fill();
+
+            // Draw zoomed tombstone centered (~10x of base ~20x24 visual core)
+            const sprite = Sprites.graves[graveObj.index % Sprites.graves.length];
+            if (sprite) {
+                const targetW = 196;
+                const targetH = 242;
+                const gx = Math.round((detailCanvas.width - targetW) / 2);
+                const gy = Math.round(268 - targetH + 10);
+                dCtx.drawImage(sprite, gx, gy, targetW, targetH);
+            }
+
+            // Draw placed withered roses on the ground in front of tombstone
+            const flowersCount = graveObj.flowers || 0;
+            for (let f = 0; f < Math.min(flowersCount, 14); f++) {
+                const off = getDeterministicOffset((graveObj.index || 0) + 17, f, 76, 16);
+                const fx = Math.round(120 + off.x);
+                const fy = Math.round(274 + off.y);
+
+                // Stem / leaves
+                dCtx.fillStyle = '#2d4227';
+                dCtx.fillRect(fx - 6, fy, 14, 4);
+                // Withered crimson/burgundy rose petals
+                dCtx.fillStyle = '#7f1d1d';
+                dCtx.fillRect(fx - 4, fy - 6, 10, 8);
+                dCtx.fillStyle = '#be123c';
+                dCtx.fillRect(fx - 2, fy - 4, 6, 4);
+            }
+
+            // Draw lit memorial candles around the base/ledge
+            const candlesCount = graveObj.candles || 0;
+            for (let c = 0; c < Math.min(candlesCount, 12); c++) {
+                const off = getDeterministicOffset((graveObj.index || 0) + 73, c, 88, 18);
+                const cx = Math.round(120 + off.x);
+                const cy = Math.round(266 + off.y);
+
+                // Warm glow halo
+                const glow = dCtx.createRadialGradient(cx, cy - 22, 2, cx, cy - 22, 32);
+                glow.addColorStop(0, 'rgba(251, 191, 36, 0.55)');
+                glow.addColorStop(1, 'rgba(251, 191, 36, 0)');
+                dCtx.fillStyle = glow;
+                dCtx.beginPath();
+                dCtx.arc(cx, cy - 22, 32, 0, Math.PI * 2);
+                dCtx.fill();
+
+                // Wax body
+                dCtx.fillStyle = '#e7e5e4';
+                dCtx.fillRect(cx - 4, cy - 14, 8, 14);
+                dCtx.fillStyle = '#a8a29e';
+                dCtx.fillRect(cx + 2, cy - 14, 2, 14);
+
+                // Wick & flame
+                dCtx.fillStyle = '#1c1917';
+                dCtx.fillRect(cx, cy - 18, 2, 4);
+                dCtx.fillStyle = '#f59e0b';
+                dCtx.fillRect(cx - 2, cy - 24, 6, 6);
+                dCtx.fillStyle = '#fef08a';
+                dCtx.fillRect(cx, cy - 22, 2, 4);
+            }
+
+            preview.appendChild(detailCanvas);
+        }
+
+        function openMemorialModal(graveObj) {
+            const modal = document.getElementById('memorial-modal');
+            renderDetailedMemorialArtwork(graveObj);
+
+            document.getElementById('memorial-pair-name').innerText = graveObj.name || `${graveObj.p1 || 'А'} + ${graveObj.p2 || 'Б'}`;
+            document.getElementById('memorial-dates').innerText = graveObj.dates || "2023 — 2024";
+            document.getElementById('memorial-epitaph').innerText = `"${graveObj.epitaph || 'Здесь покоится былая любовь.'}"`;
+            document.getElementById('memorial-candles-count').innerHTML = `<i class="fa-solid fa-fire mr-1 text-amber-500"></i> Свечей: ${graveObj.candles || 0}`;
+            document.getElementById('memorial-flowers-count').innerHTML = `<i class="fa-solid fa-spa mr-1 text-rose-400"></i> Увядших роз: ${graveObj.flowers || 0}`;
+
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('close-memorial-btn').onclick = () => {
+            document.getElementById('memorial-modal').classList.add('hidden');
+        };
+
+        document.getElementById('btn-light-candle').onclick = () => {
+            if (!activeMemorialTile || !activeMemorialTile.object) return;
+            activeMemorialTile.object.candles = (activeMemorialTile.object.candles || 0) + 1;
+            document.getElementById('memorial-candles-count').innerHTML = `<i class="fa-solid fa-fire mr-1 text-amber-500"></i> Свечей: ${activeMemorialTile.object.candles}`;
+            renderDetailedMemorialArtwork(activeMemorialTile.object);
+            saveCemeteryToLocalStorage();
+            playClickSound();
+            showToast("Вы зажгли свечу памяти.", "amber");
+        };
+
+        document.getElementById('btn-place-flower').onclick = () => {
+            if (!activeMemorialTile || !activeMemorialTile.object) return;
+            activeMemorialTile.object.flowers = (activeMemorialTile.object.flowers || 0) + 1;
+            document.getElementById('memorial-flowers-count').innerHTML = `<i class="fa-solid fa-spa mr-1 text-rose-400"></i> Увядших роз: ${activeMemorialTile.object.flowers}`;
+            renderDetailedMemorialArtwork(activeMemorialTile.object);
+            saveCemeteryToLocalStorage();
+            playClickSound();
+            showToast("Вы возложили сухую розу.", "rose");
+        };
+
+        // Admin Panel Modal Open/Close Handlers
+        document.getElementById('btn-admin-panel').onclick = () => {
+            renderAdminGravesList();
+            document.getElementById('admin-modal').classList.remove('hidden');
+            playClickSound();
+        };
+
+        document.getElementById('close-admin-btn').onclick = () => {
+            document.getElementById('admin-modal').classList.add('hidden');
+        };
+
+        // ===================================================================
+        // 6. INITIALIZATION & LAUNCH
+        // ===================================================================
+        window.onload = function () {
+            updateClockBadge();
+            setInterval(() => {
+                updateClockBadge();
+                syncTimeWithSystemClock();
+            }, 1000);
+
+            syncWeatherWithUserLocation();
+            setInterval(syncWeatherWithUserLocation, 15 * 60 * 1000);
+
+            initAllProceduralSprites();
+            initDefaultCemeteryLayout();
+            loadCemeteryFromLocalStorage();
+
+            const assetURLs = [
+                { url: 'Gemini_Generated_Image_qqgn6vqqgn6vqqgn.jpg', cols: 5, rows: 4, w: 64, h: 80, target: 'graves' },
+                { url: 'watermarked_img_13896649603256781628.jpg', cols: 5, rows: 4, w: 80, h: 100, target: 'trees' },
+                { url: 'watermarked_img_17904783475503433459.jpg', cols: 5, rows: 4, w: 64, h: 80, target: 'fences' },
+                { url: 'watermarked_img_14430529209369436590.jpg', cols: 10, rows: 5, w: 64, h: 32, target: 'tiles' }
+            ];
+
+            assetURLs.forEach(asset => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    sliceSpriteSheet(img, asset.cols, asset.rows, asset.w, asset.h, (sprites) => {
+                        if (asset.target === 'graves') {
+                            // Заменяем первые 20 базовых спрайтов, сохраняя динамически загруженные из `pic/`
+                            const customGraves = Sprites.graves.slice(20);
+                            const customNames = Sprites.graveNames.slice(20);
+                            Sprites.graves = [...sprites, ...customGraves];
+                            Sprites.graveNames = [
+                                ...sprites.map((_, i) => `Памятник #${i + 1}`),
+                                ...customNames
+                            ];
+                        } else {
+                            Sprites[asset.target] = sprites;
+                        }
+                    });
+                };
+                img.src = asset.url;
+            });
+
+            // Первичный скан папки `pic/` и фоновое отслеживание новых файлов каждые 4 секунды
+            scanPicFolderSprites(false);
+            setInterval(() => scanPicFolderSprites(true), 4000);
+
+            render();
+        };
     </script>
 </body>
 </html>
