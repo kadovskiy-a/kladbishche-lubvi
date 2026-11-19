@@ -225,6 +225,7 @@
             </div>
         </div>
         <div id="palette-container" class="flex gap-2 overflow-x-auto py-2 px-1 max-h-24 items-center border border-stone-800 rounded bg-stone-950/80"></div>
+        <input type="file" id="pic-folder-input" webkitdirectory directory multiple accept="image/*" class="hidden">
     </div>
 
     <!-- BURIAL ORDER FORM MODAL (Буквы пары А + Б & Выбор надгробия) -->
@@ -494,6 +495,9 @@
         };
 
         const SUPPORTED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
+        let selectedLocalPicFiles = []; // Файлы из локально выбранной папки pic/
+        let lastPicScanDiagnostic = '';
+
         // Директория pic/ строго рядом с index.html (с безопасной обработкой blob:-превью)
         function resolvePicFolderUrl() {
             try {
@@ -921,16 +925,47 @@
             });
         }
 
-        // Сканирует папку `./pic/` рядом с index.html через HTTP-листинг или `./pic/manifest.json`
-        async function scanPicFolderSprites(notifyOnNew = false) {
-            if (!PIC_FOLDER_URL) return 0;
+        async function loadFilesFromLocalPicSelection(fileList) {
+            let added = 0;
+            for (const file of Array.from(fileList || [])) {
+                if (!isSupportedImageFile(file.name)) {
+                    console.warn(`[pic-loader] Пропущен неподдерживаемый файл: "${file.name}"`);
+                    continue;
+                }
+                const uniqueKey = `local:${file.name}:${file.size}:${file.lastModified}`;
+                if (Sprites.customGraveSources.has(uniqueKey)) continue;
+                const objUrl = URL.createObjectURL(file);
+                const ok = await loadSingleGraveSpriteFromSource(objUrl, getFileBaseName(file.name), uniqueKey);
+                if (ok) added++;
+            }
+            return added;
+        }
 
+        // Сканирует папку `./pic/` рядом с index.html + локально выбранные файлы
+        async function scanPicFolderSprites(notifyOnNew = false) {
             let addedCount = 0;
 
-            // Автоматический скан директории `./pic/` рядом с index.html
+            // 1. Если пользователь выбрал локальную папку pic/ через диалог (работает даже при file://)
+            if (selectedLocalPicFiles.length > 0) {
+                addedCount += await loadFilesFromLocalPicSelection(selectedLocalPicFiles);
+            }
+
+            if (window.location.protocol === 'file:' || !PIC_FOLDER_URL) {
+                lastPicScanDiagnostic = 'Страница открыта напрямую с диска (file://). Браузер запрещает авточтение папок без сервера — нажмите «Папка pic/» рядом.';
+                if (addedCount > 0) {
+                    if (editorMode && selectedCategory === 'graves') renderEditorPalette();
+                    if (!document.getElementById('burial-modal')?.classList.contains('hidden')) openBurialModal();
+                    if (notifyOnNew) showToast(`Загружено новых спрайтов из pic/: ${addedCount}`, 'emerald');
+                }
+                return addedCount;
+            }
+
+            // 2. Автоматический скан директории `./pic/` рядом с index.html по HTTP
             const candidateFiles = new Set();
+            let dirStatus = 0;
             try {
                 const dirRes = await fetch(PIC_FOLDER_URL, { cache: 'no-store' });
+                dirStatus = dirRes.status;
                 if (dirRes.ok) {
                     const contentType = dirRes.headers.get('content-type') || '';
                     if (contentType.includes('application/json')) {
@@ -949,7 +984,7 @@
                     }
                 }
             } catch (_) {
-                // Игнорируем в file:// окружении
+                dirStatus = -1;
             }
 
             try {
@@ -972,6 +1007,18 @@
                 const fullUrl = new URL(encodeURIComponent(cleanName), PIC_FOLDER_URL).href;
                 const loaded = await loadSingleGraveSpriteFromSource(fullUrl, getFileBaseName(cleanName), `http:${cleanName}`);
                 if (loaded) addedCount++;
+            }
+
+            if (candidateFiles.size === 0) {
+                if (dirStatus === 404) {
+                    lastPicScanDiagnostic = 'Папка ./pic/ не найдена на сервере (404) или пуста. Создайте папку pic рядом с index.html или укажите её кнопкой «Папка pic/».';
+                } else if (dirStatus === 403) {
+                    lastPicScanDiagnostic = 'Сервер запретил список файлов ./pic/ (403). Добавьте pic/manifest.json или укажите папку кнопкой «Папка pic/».';
+                } else {
+                    lastPicScanDiagnostic = 'В ./pic/ пока нет новых изображений или сервер не отдаёт список файлов. Можно выбрать папку кнопкой «Папка pic/».';
+                }
+            } else {
+                lastPicScanDiagnostic = '';
             }
 
             if (addedCount > 0) {
@@ -1789,22 +1836,37 @@
                 gravesTab.textContent = `Надгробия (${Sprites.graves.length})`;
             }
 
-            // Для вкладки «Надгробия» добавляем кнопку пересканирования папки `./pic/`
+            // Для вкладки «Надгробия» добавляем кнопки скана `./pic/` и локального выбора папки `pic/`
             if (selectedCategory === 'graves') {
                 const syncWrap = document.createElement('div');
                 syncWrap.className = 'shrink-0 flex flex-col gap-1 pr-1';
 
                 const refreshBtn = document.createElement('button');
-                refreshBtn.className = 'px-2.5 py-2 rounded border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-200 text-[10px] font-mono flex items-center gap-1';
+                refreshBtn.className = 'px-2.5 py-1 rounded border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-200 text-[10px] font-mono flex items-center gap-1';
                 refreshBtn.title = 'Пересканировать папку ./pic/ рядом с index.html';
                 refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Скан ./pic/';
                 refreshBtn.onclick = async () => {
                     const added = await scanPicFolderSprites(true);
-                    if (added === 0) showToast('Новых файлов в папке ./pic/ не обнаружено.', 'stone');
+                    if (added === 0) {
+                        showToast(lastPicScanDiagnostic || 'Новых файлов в папке ./pic/ не обнаружено.', 'amber');
+                    }
                     renderEditorPalette();
                 };
 
+                const folderBtn = document.createElement('button');
+                folderBtn.className = 'px-2.5 py-1 rounded border border-amber-700 bg-amber-950/70 hover:bg-amber-900 text-amber-200 text-[10px] font-mono flex items-center gap-1';
+                folderBtn.title = 'Выбрать папку pic/ напрямую с диска (если открыто через file:// или без листинга)';
+                folderBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Папка pic/';
+                folderBtn.onclick = () => {
+                    const inputEl = document.getElementById('pic-folder-input');
+                    if (inputEl) {
+                        inputEl.value = '';
+                        inputEl.click();
+                    }
+                };
+
                 syncWrap.appendChild(refreshBtn);
+                syncWrap.appendChild(folderBtn);
                 container.appendChild(syncWrap);
             }
 
@@ -1837,6 +1899,19 @@
                 container.appendChild(btn);
             });
         }
+
+        document.getElementById('pic-folder-input').onchange = async (e) => {
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
+            selectedLocalPicFiles = Array.from(files);
+            const added = await loadFilesFromLocalPicSelection(selectedLocalPicFiles);
+            if (added > 0) {
+                showToast(`Загружено спрайтов из выбранной папки: ${added}`, 'emerald');
+                renderEditorPalette();
+            } else {
+                showToast('В выбранной папке не найдено новых изображений (PNG/JPG/WEBP/GIF/SVG).', 'amber');
+            }
+        };
 
         // Time-of-day, Audio & Admin Controls
         document.getElementById('audio-toggle').onclick = () => {
