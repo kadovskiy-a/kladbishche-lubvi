@@ -433,6 +433,9 @@
                 <button id="btn-admin-clear-graves" class="bg-red-950 hover:bg-red-900 text-red-200 border border-red-700 px-3 py-2 rounded font-bold">
                     <i class="fa-solid fa-trash mr-1"></i> Очистить все могилы
                 </button>
+                <button id="btn-admin-reset-all" class="bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600 px-3 py-2 rounded font-bold">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> Сбросить всё сохранение
+                </button>
             </div>
 
             <div class="space-y-2">
@@ -1594,6 +1597,7 @@
                 disableEditorMode();
             }
 
+            saveCemeteryToLocalStorage();
             showToast(`Добро пожаловать, ${username}!`, "emerald");
             playPaymentChime();
         }
@@ -1614,6 +1618,7 @@
         document.getElementById('btn-logout').onclick = () => {
             currentUser = null;
             disableEditorMode();
+            saveCemeteryToLocalStorage();
             document.getElementById('start-screen').classList.remove('hidden');
             document.getElementById('btn-logout').classList.add('hidden');
             document.getElementById('btn-admin-panel').classList.add('hidden');
@@ -1737,13 +1742,24 @@
                 setTimeOfDay(mapped.mode);
                 updateWeatherBadge(cityLabel, current.temperature_2m, mapped.label, mapped.icon);
             } catch (err) {
-                syncTimeWithSystemClock();
+                window.syncTimeWithSystemClock();
                 updateWeatherBadge(cityLabel, null, timeOfDay === 'fog' ? 'Туман' : (timeOfDay === 'night' ? 'Ночь' : 'Сумерки'), 'fa-location-dot text-rose-400');
             }
         }
 
+        window.syncTimeWithSystemClock = function syncTimeWithSystemClock() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 9) {
+                setTimeOfDay('fog');
+            } else if (hour >= 9 && hour < 20) {
+                setTimeOfDay('twilight');
+            } else {
+                setTimeOfDay('night');
+            }
+        };
+
         async function syncWeatherWithUserLocation() {
-            syncTimeWithSystemClock();
+            window.syncTimeWithSystemClock();
             updateWeatherBadge('Погода', null, 'определение...', 'fa-location-crosshairs text-amber-300');
 
             const applyFallbackByIpOrClock = async () => {
@@ -1778,15 +1794,23 @@
 
         function saveCemeteryToLocalStorage() {
             try {
+                const bannerHidden = !document.getElementById('instruction-banner');
                 const serialized = gridMap.map(col =>
                     col.map(cell => ({
                         tile: cell.tile,
-                        object: cell.object
+                        object: cell.object ? { ...cell.object } : null
                     }))
                 );
                 localStorage.setItem(STORAGE_KEY_MAP, JSON.stringify({
                     grid: serialized,
-                    balance: userBalance
+                    balance: userBalance,
+                    currentUser,
+                    bannerHidden,
+                    camera: {
+                        x: camera.x,
+                        y: camera.y,
+                        zoom: camera.zoom
+                    }
                 }));
             } catch (err) {
                 console.warn('Не удалось сохранить состояние кладбища:', err);
@@ -1815,46 +1839,149 @@
                     const balEl = document.getElementById('user-balance');
                     if (balEl) balEl.innerText = `${userBalance.toLocaleString()} ₽`;
                 }
+                if (parsed.bannerHidden) {
+                    document.getElementById('instruction-banner')?.remove();
+                }
+                if (parsed.camera && typeof parsed.camera === 'object') {
+                    if (typeof parsed.camera.x === 'number') camera.x = parsed.camera.x;
+                    if (typeof parsed.camera.y === 'number') camera.y = parsed.camera.y;
+                    if (typeof parsed.camera.zoom === 'number') {
+                        camera.zoom = Math.max(camera.minZoom, Math.min(camera.maxZoom, parsed.camera.zoom));
+                    }
+                }
+                if (parsed.currentUser && typeof parsed.currentUser.username === 'string') {
+                    performLogin(parsed.currentUser.username, Boolean(parsed.currentUser.isAdmin));
+                }
             } catch (err) {
                 console.warn('Не удалось загрузить сохранение кладбища:', err);
             }
         }
+
+        // Периодически фиксируем позицию камеры и масштаб, если они менялись
+        setInterval(() => {
+            saveCemeteryToLocalStorage();
+        }, 5000);
 
         function renderAdminGravesList() {
             const listEl = document.getElementById('admin-graves-list');
             if (!listEl) return;
             listEl.innerHTML = '';
 
-            const graves = [];
+            const gravesFound = [];
             for (let x = 0; x < MAP_SIZE; x++) {
                 for (let y = 0; y < MAP_SIZE; y++) {
                     const obj = gridMap[x][y].object;
                     if (obj && obj.cat === 'graves') {
-                        graves.push({ x, y, obj });
+                        gravesFound.push({ x, y, obj });
                     }
                 }
             }
 
-            if (graves.length === 0) {
-                listEl.innerHTML = '<div class="text-stone-500 py-2 text-center">Захоронений пока нет.</div>';
+            if (gravesFound.length === 0) {
+                listEl.innerHTML = '<div class="text-stone-500 italic py-2 text-center">Захоронений пока нет.</div>';
                 return;
             }
 
-            graves.forEach(({ x, y, obj }) => {
+            gravesFound.forEach(({ x, y, obj }) => {
                 const row = document.createElement('div');
                 row.className = 'flex items-center justify-between bg-stone-900/90 border border-stone-800 rounded px-2.5 py-1.5';
                 row.innerHTML = `
-                    <span><b class="text-rose-400">[${x}, ${y}]</b> ${obj.name || `${obj.p1 || 'А'} + ${obj.p2 || 'Б'}`} — <span class="text-stone-400 italic">"${obj.epitaph || ''}"</span></span>
-                    <button class="text-red-400 hover:text-red-300 px-2 py-0.5 rounded bg-red-950/60 border border-red-900" title="Удалить могилу"><i class="fa-solid fa-trash"></i></button>
+                    <span class="font-mono text-rose-300">[${x}, ${y}] — ${obj.name || `${obj.p1 || 'А'} + ${obj.p2 || 'Б'}`}</span>
+                    <button class="text-red-400 hover:text-red-300 text-[11px] font-mono">Удалить</button>
                 `;
                 row.querySelector('button').onclick = () => {
                     gridMap[x][y].object = null;
                     saveCemeteryToLocalStorage();
                     renderAdminGravesList();
-                    showToast(`Захоронение [${x}, ${y}] удалено.`, 'amber');
+                    showToast(`Захоронение на [${x}, ${y}] удалено.`, 'amber');
                 };
                 listEl.appendChild(row);
             });
+        }
+
+        function openBurialModal() {
+            const modal = document.getElementById('burial-modal');
+            const grid = document.getElementById('burial-tombstone-grid');
+            if (!modal || !grid) return;
+
+            if (selectedBurialTombstoneIndex >= Sprites.graves.length) {
+                selectedBurialTombstoneIndex = 0;
+            }
+
+            grid.innerHTML = '';
+            Sprites.graves.forEach((sprite, idx) => {
+                const card = document.createElement('button');
+                card.type = 'button';
+                const isSelected = idx === selectedBurialTombstoneIndex;
+                const price = TombstonePrices[idx] || 1500;
+                const label = Sprites.graveNames[idx] || `Памятник #${idx + 1}`;
+                card.className = `p-1.5 rounded border flex flex-col items-center justify-between gap-1 bg-stone-900 ${isSelected ? 'border-rose-500 bg-rose-950/40' : 'border-stone-800 hover:border-stone-600'}`;
+
+                const img = document.createElement('img');
+                img.src = sprite.toDataURL();
+                img.className = 'w-9 h-10 object-contain pixelated';
+                card.appendChild(img);
+
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'w-full truncate text-[9px] font-mono text-stone-300 text-center';
+                nameSpan.textContent = label;
+                card.appendChild(nameSpan);
+
+                const priceSpan = document.createElement('span');
+                priceSpan.className = 'text-[9px] font-mono text-amber-400';
+                priceSpan.textContent = `${price.toLocaleString()} ₽`;
+                card.appendChild(priceSpan);
+
+                card.onclick = () => {
+                    selectedBurialTombstoneIndex = idx;
+                    document.getElementById('burial-total-price').innerText = `${price.toLocaleString()} ₽`;
+                    openBurialModal();
+                    playClickSound();
+                };
+
+                grid.appendChild(card);
+            });
+
+            const currentPrice = TombstonePrices[selectedBurialTombstoneIndex] || 1500;
+            document.getElementById('burial-total-price').innerText = `${currentPrice.toLocaleString()} ₽`;
+
+            if (!document.getElementById('burial-epitaph-input').value.trim()) {
+                document.getElementById('burial-epitaph-input').value = GeneratedEpitaphs[0];
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function handleMapClick(sx, sy) {
+            const { gx, gy } = screenToGrid(sx, sy);
+            if (gx < 0 || gx >= MAP_SIZE || gy < 0 || gy >= MAP_SIZE) return;
+
+            playClickSound();
+
+            if (editorMode) {
+                if (selectedTool === 'paint') {
+                    if (selectedCategory === 'tiles') gridMap[gx][gy].tile = selectedSpriteIndex;
+                    else {
+                        gridMap[gx][gy].object = {
+                            cat: selectedCategory, index: selectedSpriteIndex,
+                            candles: 0, flowers: 0, p1: "А", p2: "Б",
+                            name: "Пара «А + Б»", dates: "2023 — 2024",
+                            epitaph: "Здесь покоятся былые чувства.",
+                            isLamp: (selectedCategory === 'fences' && selectedSpriteIndex <= 1)
+                        };
+                    }
+                    saveCemeteryToLocalStorage();
+                } else if (selectedTool === 'erase') {
+                    gridMap[gx][gy].object = null;
+                    saveCemeteryToLocalStorage();
+                }
+            } else {
+                const cell = gridMap[gx][gy];
+                if (cell.object && cell.object.cat === 'graves') {
+                    activeMemorialTile = cell;
+                    openMemorialModal(cell.object);
+                }
+            }
         }
 
         function renderEditorPalette() {
@@ -2037,51 +2164,13 @@
             showToast('Все захоронения очищены.', 'amber');
         };
 
-        function openBurialModal() {
-            const modal = document.getElementById('burial-modal');
-            const grid = document.getElementById('burial-tombstone-grid');
-            grid.innerHTML = '';
-
-            Sprites.graves.forEach((sprite, idx) => {
-                const price = TombstonePrices[idx] || 1500;
-                const graveTitle = Sprites.graveNames[idx] || `Памятник #${idx + 1}`;
-                const card = document.createElement('div');
-                card.title = graveTitle;
-                card.className = `p-1.5 rounded border cursor-pointer flex flex-col items-center justify-between bg-stone-900 transition-all ${selectedBurialTombstoneIndex === idx ? 'border-rose-500 bg-rose-950/30 scale-105' : 'border-stone-800 hover:border-stone-600'}`;
-                
-                const img = document.createElement('img');
-                img.src = sprite.toDataURL();
-                img.className = "w-10 h-12 object-contain pixelated";
-
-                const nameTag = document.createElement('span');
-                nameTag.className = "w-full truncate text-center text-[9px] font-mono text-stone-300 mt-1";
-                nameTag.innerText = graveTitle;
-                
-                const priceTag = document.createElement('span');
-                priceTag.className = "text-[10px] font-mono text-amber-400";
-                priceTag.innerText = `${price} ₽`;
-
-                card.appendChild(img);
-                card.appendChild(nameTag);
-                card.appendChild(priceTag);
-                card.onclick = () => {
-                    selectedBurialTombstoneIndex = idx;
-                    document.getElementById('burial-total-price').innerText = `${price.toLocaleString()} ₽`;
-                    openBurialModal();
-                    playClickSound();
-                };
-                grid.appendChild(card);
-            });
-
-            const currentPrice = TombstonePrices[selectedBurialTombstoneIndex] || 1500;
-            document.getElementById('burial-total-price').innerText = `${currentPrice.toLocaleString()} ₽`;
-
-            if (!document.getElementById('burial-epitaph-input').value.trim()) {
-                document.getElementById('burial-epitaph-input').value = GeneratedEpitaphs[0];
-            }
-
-            modal.classList.remove('hidden');
-        }
+        document.getElementById('btn-admin-reset-all').onclick = () => {
+            localStorage.removeItem(STORAGE_KEY_MAP);
+            showToast('Сохранение сброшено. Перезагрузка страницы...', 'amber');
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        };
 
         document.getElementById('close-burial-btn').onclick = () => {
             document.getElementById('burial-modal').classList.add('hidden');
@@ -2353,10 +2442,11 @@
         // 6. INITIALIZATION & LAUNCH
         // ===================================================================
         window.onload = function () {
+            window.syncTimeWithSystemClock();
             updateClockBadge();
             setInterval(() => {
                 updateClockBadge();
-                syncTimeWithSystemClock();
+                window.syncTimeWithSystemClock();
             }, 1000);
 
             syncWeatherWithUserLocation();
