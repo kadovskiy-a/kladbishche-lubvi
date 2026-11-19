@@ -494,8 +494,19 @@
         };
 
         const SUPPORTED_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'];
-        const PIC_FOLDER_PATH = './pic/';
-        let picDirectoryHandle = null; // File System Access API handle (для live-скана локальной папки pic)
+        // Директория pic/ строго рядом с index.html (с безопасной обработкой blob:-превью)
+        function resolvePicFolderUrl() {
+            try {
+                const baseHref = window.location.href;
+                if (!baseHref || baseHref.startsWith('blob:') || baseHref.startsWith('data:')) {
+                    return null;
+                }
+                return new URL('./pic/', baseHref).href;
+            } catch (_) {
+                return null;
+            }
+        }
+        const PIC_FOLDER_URL = resolvePicFolderUrl();
 
         const camera = {
             x: 0,
@@ -910,35 +921,16 @@
             });
         }
 
-        // Сканирует папку `pic/` через HTTP-листинг / манифест `pic/manifest.json` и/или File System Access API
+        // Сканирует папку `./pic/` рядом с index.html через HTTP-листинг или `./pic/manifest.json`
         async function scanPicFolderSprites(notifyOnNew = false) {
+            if (!PIC_FOLDER_URL) return 0;
+
             let addedCount = 0;
 
-            // Способ 1: Нативный File System Access API (если пользователь/админ привязал локальную папку `pic/`)
-            if (picDirectoryHandle) {
-                try {
-                    for await (const [entryName, handle] of picDirectoryHandle.entries()) {
-                        if (handle.kind !== 'file') continue;
-                        if (!isSupportedImageFile(entryName)) {
-                            console.warn(`[pic-loader] Неподдерживаемый формат файла в pic/: "${entryName}". Поддерживаются: ${SUPPORTED_IMAGE_EXTENSIONS.join(', ').toUpperCase()}`);
-                            continue;
-                        }
-                        const file = await handle.getFile();
-                        const uniqueKey = `fs:${entryName}:${file.lastModified}`;
-                        const objectUrl = URL.createObjectURL(file);
-                        const loaded = await loadSingleGraveSpriteFromSource(objectUrl, getFileBaseName(entryName), uniqueKey);
-                        if (loaded) addedCount++;
-                        else URL.revokeObjectURL(objectUrl);
-                    }
-                } catch (err) {
-                    console.warn('[pic-loader] Ошибка чтения привязанной папки pic/:', err);
-                }
-            }
-
-            // Способ 2: Автоматический HTTP-скан папки `./pic/` (индекс директории dev-сервера или `./pic/manifest.json`)
+            // Автоматический скан директории `./pic/` рядом с index.html
             const candidateFiles = new Set();
             try {
-                const dirRes = await fetch(PIC_FOLDER_PATH, { cache: 'no-store' });
+                const dirRes = await fetch(PIC_FOLDER_URL, { cache: 'no-store' });
                 if (dirRes.ok) {
                     const contentType = dirRes.headers.get('content-type') || '';
                     if (contentType.includes('application/json')) {
@@ -950,7 +942,9 @@
                         doc.querySelectorAll('a[href]').forEach(a => {
                             const href = a.getAttribute('href') || '';
                             if (!href || href.startsWith('?') || href.startsWith('#') || href.endsWith('/')) return;
-                            candidateFiles.add(href.split('/').pop());
+                            const cleanHref = href.split('?')[0].split('#')[0];
+                            const fileName = cleanHref.split('/').pop();
+                            if (fileName) candidateFiles.add(fileName);
                         });
                     }
                 }
@@ -959,7 +953,8 @@
             }
 
             try {
-                const manifestRes = await fetch(`${PIC_FOLDER_PATH}manifest.json`, { cache: 'no-store' });
+                const manifestUrl = new URL('manifest.json', PIC_FOLDER_URL).href;
+                const manifestRes = await fetch(manifestUrl, { cache: 'no-store' });
                 if (manifestRes.ok) {
                     const files = await manifestRes.json();
                     if (Array.isArray(files)) files.forEach(f => candidateFiles.add(String(f)));
@@ -974,7 +969,7 @@
                     console.warn(`[pic-loader] Пропущен файл неподдерживаемого формата в pic/: "${cleanName}"`);
                     continue;
                 }
-                const fullUrl = `${PIC_FOLDER_PATH}${encodeURIComponent(cleanName)}`;
+                const fullUrl = new URL(encodeURIComponent(cleanName), PIC_FOLDER_URL).href;
                 const loaded = await loadSingleGraveSpriteFromSource(fullUrl, getFileBaseName(cleanName), `http:${cleanName}`);
                 if (loaded) addedCount++;
             }
@@ -985,23 +980,6 @@
                 if (notifyOnNew) showToast(`Загружено новых спрайтов из pic/: ${addedCount}`, 'emerald');
             }
             return addedCount;
-        }
-
-        async function bindLocalPicFolder() {
-            if (!window.showDirectoryPicker) {
-                showToast('Ваш браузер не поддерживает прямой доступ к локальным папкам (File System Access API). Используйте локальный сервер с автоиндексом папки pic/.', 'amber');
-                return;
-            }
-            try {
-                picDirectoryHandle = await window.showDirectoryPicker({ mode: 'read' });
-                const count = await scanPicFolderSprites(false);
-                renderEditorPalette();
-                showToast(`Папка "${picDirectoryHandle.name}" подключена. Найдено спрайтов: ${count}.`, 'emerald');
-            } catch (err) {
-                if (err?.name !== 'AbortError') {
-                    console.warn('[pic-loader] Не удалось подключить папку pic:', err);
-                }
-            }
         }
 
         // ===================================================================
@@ -1811,29 +1789,22 @@
                 gravesTab.textContent = `Надгробия (${Sprites.graves.length})`;
             }
 
-            // Для вкладки «Надгробия» добавляем кнопки обновления и привязки локальной папки `pic/`
+            // Для вкладки «Надгробия» добавляем кнопку пересканирования папки `./pic/`
             if (selectedCategory === 'graves') {
                 const syncWrap = document.createElement('div');
                 syncWrap.className = 'shrink-0 flex flex-col gap-1 pr-1';
 
                 const refreshBtn = document.createElement('button');
-                refreshBtn.className = 'px-2 py-1 rounded border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-200 text-[10px] font-mono flex items-center gap-1';
-                refreshBtn.title = 'Пересканировать папку pic/';
-                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Скан pic/';
+                refreshBtn.className = 'px-2.5 py-2 rounded border border-emerald-700 bg-emerald-950/70 hover:bg-emerald-900 text-emerald-200 text-[10px] font-mono flex items-center gap-1';
+                refreshBtn.title = 'Пересканировать папку ./pic/ рядом с index.html';
+                refreshBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Скан ./pic/';
                 refreshBtn.onclick = async () => {
                     const added = await scanPicFolderSprites(true);
-                    if (added === 0) showToast('Новых файлов в папке pic/ не обнаружено.', 'stone');
+                    if (added === 0) showToast('Новых файлов в папке ./pic/ не обнаружено.', 'stone');
                     renderEditorPalette();
                 };
 
-                const bindBtn = document.createElement('button');
-                bindBtn.className = 'px-2 py-1 rounded border border-amber-700 bg-amber-950/70 hover:bg-amber-900 text-amber-200 text-[10px] font-mono flex items-center gap-1';
-                bindBtn.title = 'Выбрать папку pic/ с диска для отслеживания новых файлов без перезапуска';
-                bindBtn.innerHTML = '<i class="fa-solid fa-folder-open"></i> Папка pic/';
-                bindBtn.onclick = () => bindLocalPicFolder();
-
                 syncWrap.appendChild(refreshBtn);
-                syncWrap.appendChild(bindBtn);
                 container.appendChild(syncWrap);
             }
 
